@@ -1,4 +1,4 @@
-# craneapplication
+# CraneApplication
 
 A new Flutter project.
 
