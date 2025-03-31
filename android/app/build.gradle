@@ -1,0 +1,55 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
+}
+
+android {
+    namespace = "com.example.craneapplication"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        // Specify your unique Application ID
+        applicationId = "com.example.craneapplication"
+        // Explicitly set minSdkVersion and targetSdkVersion
+        minSdkVersion 23
+        targetSdkVersion 33
+        versionCode flutter.versionCode.toInteger()
+        versionName flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // Signing config for release
+            signingConfig = signingConfigs.debug
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+dependencies {
+
+    // Firebase dependencies
+    implementation 'com.google.firebase:firebase-auth:21.0.1'
+    implementation 'com.google.firebase:firebase-firestore:24.0.1'
+    implementation 'com.google.firebase:firebase-storage:20.0.0'
+
+    implementation "com.google.android.gms:play-services-auth:20.7.0" // Google Sign-In
+}
+
+apply plugin: 'com.google.gms.google-services'  // Apply the Firebase plugin at the end

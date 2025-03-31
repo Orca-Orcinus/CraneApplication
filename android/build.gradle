@@ -1,0 +1,33 @@
+buildscript {
+    repositories {
+        google()  // Ensure this is present to access Google's repositories
+        mavenCentral()
+    }
+    dependencies {        
+        classpath "com.android.tools.build:gradle:8.3.0" // Or latest compatible version
+        classpath 'com.google.gms:google-services:4.3.15'  // Required to apply Google services plugin (Firebase, etc.)
+    }
+}
+
+allprojects {
+    repositories {
+        google()  // Required to access Google's services and dependencies
+        mavenCentral()        
+        maven { url 'https://jitpack.io' }  // Add this line
+    }
+}
+
+rootProject.buildDir = "../build"  // Defines the build output directory
+
+subprojects {
+    // Directs all subprojects to build in the same root build directory
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    
+    // Ensures that subprojects evaluate the ":app" project
+    project.evaluationDependsOn(":app")
+}
+
+// Clean task to delete build directory
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

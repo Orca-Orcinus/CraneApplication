@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "681313559722",
+    "project_id": "craneapplication-a4a13",
+    "storage_bucket": "craneapplication-a4a13.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:681313559722:android:ba4ad1673a5cf35d1f5cd3",
+        "android_client_info": {
+          "package_name": "com.example.craneapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "681313559722-fsfh5tgutr75ie7hk7oo1s9e52v2gneo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.craneapplication",
+            "certificate_hash": "7096173d558be8746f1f96a3043582e79fd15197"
+          }
+        },
+        {
+          "client_id": "681313559722-mmr7b9hu0h978ieujht3dpv7rtnlgipt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCv20YItA4Qtb-YCB-UmtyNAelM-n6UV3A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "681313559722-mmr7b9hu0h978ieujht3dpv7rtnlgipt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "681313559722-u2imahbsj784th53di5bngtvvffe5dni.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.craneapplication"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
