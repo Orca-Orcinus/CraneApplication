@@ -477,9 +477,13 @@ class _CraneSelectionPageState extends State<CraneSelectionPage> {
 
   void _generateInvoicePdf(String jobId) async
   {
-    var data = await _dbService.getSpecificData(collection: "JobInfo", id: jobId);
-    var filePath = await generateInvoicePDF(data);
-    await sharePDF(filePath);
+    var docId = await fbStorageTool.getJobDocumentId(collection: "JobInfo",jobId: jobId);
+    if(docId != null)
+    {
+      var data = await _dbService.getSpecificData(collection: "JobInfo", id: docId);
+      var filePath = await generateInvoicePDF(data);
+      await sharePDF(filePath);
+    }
   }
 
   @override

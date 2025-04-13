@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -7,6 +9,20 @@ import 'package:share_plus/share_plus.dart';
 Future<String> generateInvoicePDF(Map<String, dynamic>? jobData) async {
   // Create a new PDF document
   final pdf = pw.Document();
+
+    // Load image from Firebase Storage URL
+  Uint8List? imageBytes;
+  if (jobData?['documenttype']['workorder_images'] != null) {
+    try {
+      final response = await http.get(Uri.parse(jobData!['documenttype']['workorder_images']));
+      if (response.statusCode == 200) {
+        imageBytes = response.bodyBytes;
+      }
+    } catch (e) {
+      print("Error loading image: $e");
+    }
+  }
+
 
   // Add page to the PDF
   pdf.addPage(
@@ -18,7 +34,7 @@ Future<String> generateInvoicePDF(Map<String, dynamic>? jobData) async {
           children: [
             // Header
             pw.Text(
-              'INVOICE',
+              'Invoice',
               style: pw.TextStyle(
                 fontSize: 24,
                 fontWeight: pw.FontWeight.bold,
@@ -111,6 +127,12 @@ Future<String> generateInvoicePDF(Map<String, dynamic>? jobData) async {
             // Footer
             pw.Text('Payment Terms: Due within 30 days'),
             pw.Text('Thank you for your business!'),
+
+              if (imageBytes != null) ...[
+              pw.Text('Attached Image:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 10),
+              pw.Image(pw.MemoryImage(imageBytes), height: 200),
+            ],
           ],
         );
       },
