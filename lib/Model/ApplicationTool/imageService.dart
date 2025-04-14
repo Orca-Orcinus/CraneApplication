@@ -1,4 +1,5 @@
 import 'package:craneapplication/features/auth/fbStorage.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,8 +29,9 @@ class ImageService
       jobImages.putIfAbsent(imageId, () => {});
       jobImages[imageId]!.putIfAbsent(documentType, () => []);
       // Add the new image to the list
-      jobImages[imageId]![documentType]!.add(File(image.path));      
-      fbStorageTool.uploadJobImage(imageId, documentType, File(image.path));
+      final filePath = File(image.path);
+      jobImages[imageId]![documentType]!.add(filePath);      
+      fbStorageTool.uploadJobImage(imageId, documentType, filePath);
     }
   }
 
@@ -42,8 +44,9 @@ class ImageService
       jobImages.putIfAbsent(pictureId, () => {});
       jobImages[pictureId]!.putIfAbsent(documentType, () => []);
       // Add the new image to the list
-      jobImages[pictureId]![documentType]!.add(File(image.path));     
-      fbStorageTool.uploadJobImage(pictureId, documentType, File(image.path));
+      final filePath = File(image.path);
+      jobImages[pictureId]![documentType]!.add(filePath);
+      fbStorageTool.uploadJobImage(pictureId, documentType, filePath);
     }
   }
 
@@ -109,5 +112,5 @@ class ImageService
   Future<void> inputWorkOrderNo(String jobId,documentType documentType,String workOrderNo) async
   {
     fbStorageTool.uploadWorkOrderNo(jobId, documentType, workOrderNo);
-  }
+  }  
 }

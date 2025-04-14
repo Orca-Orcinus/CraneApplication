@@ -12,9 +12,10 @@ Future<String> generateInvoicePDF(Map<String, dynamic>? jobData) async {
 
     // Load image from Firebase Storage URL
   Uint8List? imageBytes;
-  if (jobData?['documenttype']['workorder_images'] != null) {
+  var a = jobData?['downloadUrl'];
+  if (jobData?['downloadUrl'] != null) {
     try {
-      final response = await http.get(Uri.parse(jobData!['documenttype']['workorder_images']));
+      final response = await http.get(Uri.parse(jobData!['downloadUrl']));
       if (response.statusCode == 200) {
         imageBytes = response.bodyBytes;
       }
@@ -127,17 +128,29 @@ Future<String> generateInvoicePDF(Map<String, dynamic>? jobData) async {
             // Footer
             pw.Text('Payment Terms: Due within 30 days'),
             pw.Text('Thank you for your business!'),
-
-              if (imageBytes != null) ...[
-              pw.Text('Attached Image:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
-              pw.Image(pw.MemoryImage(imageBytes), height: 200),
-            ],
           ],
         );
       },
     ),
   );
+
+// Page 2: Image (if available)
+  if (imageBytes != null) {
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return 
+            pw.Image(
+              pw.MemoryImage(imageBytes!),
+              fit: pw.BoxFit.cover, // or use BoxFit.contain
+              width: PdfPageFormat.a4.width,
+              height: PdfPageFormat.a4.height,
+            );
+        },
+      ),
+    );
+  }
 
   // Save the PDF file
   final directory = await getApplicationDocumentsDirectory();

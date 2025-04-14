@@ -467,7 +467,7 @@ class _CraneSelectionPageState extends State<CraneSelectionPage> {
             onTap: ()
             {
               Navigator.pop(context);
-               _imageService.takebase64Picture(jobId,documentType);
+               _imageService.takePicture(jobId,documentType);
             },
           ),
         ],

@@ -230,7 +230,7 @@ class _DisplayJobPageState extends State<DisplayJobPage> {
             onTap: ()
             {
               Navigator.pop(context);
-               _imageService.takebase64Picture(jobId,documentType);
+               _imageService.takePicture(jobId,documentType);
             },
           ),
         ],
