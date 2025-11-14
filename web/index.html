@@ -55,5 +55,26 @@
       });
     });
   </script>
+  <!-- Firebase JS SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // Initialize Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyCsyTl34BuUhWPgvpNwmB0AZoqV5hu2uL4",
+    authDomain: "craneapplication-a4a13.firebaseapp.com",
+    databaseURL: "https://craneapplication-a4a13-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "craneapplication-a4a13",
+    storageBucket: "craneapplication-a4a13.firebasestorage.app",
+    messagingSenderId: "681313559722",
+    appId: "1:681313559722:web:5cc0011a6546a4f51f5cd3",
+    measurementId: "G-NYL9BWKDC8"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+</script>
+
 </body>
 </html>

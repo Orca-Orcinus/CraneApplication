@@ -1,5 +1,4 @@
 import 'package:craneapplication/features/auth/fbStorage.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
@@ -59,7 +58,7 @@ class ImageService
       {
         final compressedFile = await FlutterImageCompress.compressAndGetFile(
           image.path,
-          image.path + '_compressed.jpg',
+          '${image.path}_compressed.jpg',
           quality: 50, // Adjust quality as needed
         );
         
@@ -83,12 +82,6 @@ class ImageService
 
   Future<void> shareBase64Image() async {
 
-    if (_base64Image == null) {
-      print('No image to share.');
-      return;
-    }
-
-    // Share the Base64 image as text
     await Share.share('Check out this image: data:image/jpeg;base64,$_base64Image');
   }
 

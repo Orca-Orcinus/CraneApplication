@@ -8,7 +8,6 @@ import 'package:craneapplication/enum/RolesEnum.dart';
 import 'package:craneapplication/features/auth/fbStorage.dart';
 import 'package:craneapplication/features/auth/firebasestore.dart';
 import 'package:flutter/material.dart';
-import 'package:craneapplication/components/pdf.dart';
 
 class CraneSelectionPage extends StatefulWidget {
   const CraneSelectionPage({super.key});
@@ -127,7 +126,7 @@ class _CraneSelectionPageState extends State<CraneSelectionPage> {
                   children: [
                     // Select Operator Dropdown (Now displays selected value inside the field)
                     DropdownButtonFormField<String>(
-                      value: selectedOperator,
+                      initialValue: selectedOperator,
                       items: operatorList.map((operator) {
                         return DropdownMenuItem<String>(
                           value: operator,
@@ -168,7 +167,7 @@ class _CraneSelectionPageState extends State<CraneSelectionPage> {
 
                     // Select Vehicle Dropdown (Displays selected vehicle inside the field)
                     DropdownButtonFormField<String>(
-                      value: selectedVehicle,
+                      initialValue: selectedVehicle,
                       items: vehicleNumberList.map((vehicleNumber) {
                         return DropdownMenuItem<String>(
                           value: vehicleNumber,
@@ -240,7 +239,7 @@ class _CraneSelectionPageState extends State<CraneSelectionPage> {
                         return ListTile(
                           title: Text("Date:${workDay["date"].day}"),
                           subtitle: DropdownButtonFormField(
-                            value: workDay["shift"],
+                            initialValue: workDay["shift"],
                             items: ["Full-Day","AM","PM"].map((shift)
                             {
                               return DropdownMenuItem<String>(

@@ -3,7 +3,6 @@ plugins {
     id "kotlin-android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
-    id "com.google.gms.google-services"
 }
 
 android {
@@ -24,7 +23,7 @@ android {
         // Specify your unique Application ID
         applicationId = "com.example.craneapplication"
         // Explicitly set minSdkVersion and targetSdkVersion
-        minSdkVersion 23
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion 33
         versionCode flutter.versionCode.toInteger()
         versionName flutter.versionName
@@ -50,6 +49,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-storage:20.0.0'
 
     implementation "com.google.android.gms:play-services-auth:20.7.0" // Google Sign-In
+    
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
+    implementation "androidx.core:core-ktx:1.13.1"
 }
-
 apply plugin: 'com.google.gms.google-services'  // Apply the Firebase plugin at the end

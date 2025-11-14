@@ -65,7 +65,7 @@ class _DisplayJobPageState extends State<DisplayJobPage> {
     // Compress the image
     final compressedFile = await FlutterImageCompress.compressAndGetFile(
       file.absolute.path,
-      file.absolute.path + '_compressed.jpg',
+      '${file.absolute.path}_compressed.jpg',
       quality: 50, // Adjust quality as needed
     );
 

@@ -187,7 +187,7 @@ class _ManagerUserProfilePageState extends State<ManagerUserProfilePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DropdownButtonFormField<String>(
-              value: selectedUserEmail,
+              initialValue: selectedUserEmail,
               hint: Text("Select a User"),
               onChanged: OnUserSelected,
               items: users.map((user)
@@ -212,7 +212,7 @@ class _ManagerUserProfilePageState extends State<ManagerUserProfilePage> {
             ),
             SizedBox(height: 20),
             DropdownButtonFormField<Rolesenum>(
-                value: userRole,
+                initialValue: userRole,
                 hint: Text("Select a Role"),
                 onChanged: (Rolesenum? newRole) {
                   if (newRole != null) {

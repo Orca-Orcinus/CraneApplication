@@ -7,7 +7,7 @@ class AppTheme {
   static ThemeData lightTheme = ThemeData(
       scaffoldBackgroundColor: const Color.fromARGB(255, 20, 255, 71),
       primaryColor: LightColor.lightBlue,
-      cardTheme: const CardTheme(color: Colors.amber),
+      cardTheme: const CardThemeData(color: Colors.amber),
       iconTheme: const IconThemeData(color: Color.fromARGB(255, 119, 3, 94)),
       dividerColor: LightColor.black,
       appBarTheme: const AppBarTheme(

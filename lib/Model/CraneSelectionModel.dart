@@ -1,7 +1,7 @@
 import 'package:craneapplication/features/auth/firebasestore.dart';
 
 class CraneSelectionModel {
-  FireStoreService _db = FireStoreService();
+  final FireStoreService _db = FireStoreService();
   List<Map<String,String>> vehicleContent =[];  
 
   Future<List<Map<String,dynamic>>> getCraneData() async

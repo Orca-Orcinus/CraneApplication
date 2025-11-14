@@ -1,24 +1,25 @@
 {
   "project_info": {
     "project_number": "681313559722",
+    "firebase_url": "https://craneapplication-a4a13-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "craneapplication-a4a13",
     "storage_bucket": "craneapplication-a4a13.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:681313559722:android:ba4ad1673a5cf35d1f5cd3",
+        "mobilesdk_app_id": "1:681313559722:android:0aa5acb26c0ad2a81f5cd3",
         "android_client_info": {
           "package_name": "com.example.craneapplication"
         }
       },
       "oauth_client": [
         {
-          "client_id": "681313559722-fsfh5tgutr75ie7hk7oo1s9e52v2gneo.apps.googleusercontent.com",
+          "client_id": "681313559722-eh5utq6jglf8q2qj2sc4jttekfp6mjvv.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.craneapplication",
-            "certificate_hash": "7096173d558be8746f1f96a3043582e79fd15197"
+            "certificate_hash": "a467e33d3fee39eb1770f557894eab6dca5f66a5"
           }
         },
         {
