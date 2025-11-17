@@ -1,7 +1,8 @@
 enum Rolesenum {
   None,
-  Service,
-  OfficeWorker,
   Operator,
+  Foremen,
+  Account,
   Manager,
+  Administrator,
 }

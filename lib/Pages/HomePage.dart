@@ -3,6 +3,8 @@ import 'package:craneapplication/Model/UserProfile/userService.dart';
 import 'package:craneapplication/Pages/CraneSelectionPage.dart';
 import 'package:craneapplication/Pages/DisplayJobPage.dart';
 import 'package:craneapplication/Pages/LoginPage.dart';
+import 'package:craneapplication/Pages/WarehouseDataPage.dart';
+import 'package:craneapplication/enum/RolesEnum.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +19,6 @@ class _HomePageState extends State<HomePage>
 {
   final UserProfile userProfile = UserProfile();
   final UserService _userService = UserService();
-  bool? isAdministrativeRole;
 
   @override
   void initState() {
@@ -31,10 +32,11 @@ class _HomePageState extends State<HomePage>
     getRole();
   }
 
-  Future<bool> getRole() async
+  Future<Rolesenum> getRole() async
   {
-    bool role = await _userService.checkRole();
-    return role;   
+    var roleIndex = await _userService.checkUserRole();
+    Rolesenum userRole = Rolesenum.values[roleIndex];
+    return await userRole;
   }  
 
   @override
@@ -46,7 +48,7 @@ class _HomePageState extends State<HomePage>
       {
         if(snapshot.hasData)
         {          
-          return FutureBuilder<bool>(
+          return FutureBuilder<Rolesenum>(
             future: getRole(),
             builder: (context,roleSnapshot)
             {
@@ -58,9 +60,20 @@ class _HomePageState extends State<HomePage>
               {
                 return Center(child: Text("Error: ${roleSnapshot.error}"));
               }
-              return roleSnapshot.data == true
-                ? const CraneSelectionPage()
-                : const DisplayJobPage();
+              if(roleSnapshot.data == Rolesenum.Administrator)
+                return const WarehouseDataPage();
+                //return const CraneSelectionPage();
+              else if(roleSnapshot.data == Rolesenum.Manager)
+                return const WarehouseDataPage();
+                //return const DisplayJobPage();
+              else if(roleSnapshot.data == Rolesenum.Account)
+                return const DisplayJobPage();
+              else if(roleSnapshot.data == Rolesenum.Foremen)
+                return const DisplayJobPage();
+              else if(roleSnapshot.data == Rolesenum.Operator)
+                return const DisplayJobPage();
+              else
+                return const SizedBox.shrink();
             });
         }
         else

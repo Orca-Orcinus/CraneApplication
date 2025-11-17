@@ -45,5 +45,6 @@ class AuthServices {
     } catch (e) {
       print("Google Sign-In failed: $e");
     }
+    return null;
   }
 }

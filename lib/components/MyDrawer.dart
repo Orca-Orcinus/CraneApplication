@@ -4,6 +4,7 @@ import 'package:craneapplication/Pages/InvoicePage.dart';
 import 'package:craneapplication/Pages/ManagerUserProfilePage.dart';
 import 'package:craneapplication/Pages/UserProfilePage.dart';
 import 'package:craneapplication/auth/AuthPage.dart';
+import 'package:craneapplication/enum/RolesEnum.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -12,9 +13,11 @@ class MyDrawer extends StatelessWidget {
   
   final UserService user = UserService();
 
-  Future<bool> checkIfAdmin() async
+  Future<Rolesenum> checkCurrentUser() async
   {
-    return await user.checkRole();
+    var roleIndex = await user.checkUserRole();
+    Rolesenum userRole = Rolesenum.values[roleIndex];
+    return await userRole;
   }
 
   void logout() async
@@ -26,8 +29,8 @@ class MyDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        child: FutureBuilder<bool>(
-          future: checkIfAdmin(),
+        child: FutureBuilder<Rolesenum>(
+          future: checkCurrentUser(),
           builder: (context,snapshot)
           {
             if(snapshot.connectionState == ConnectionState.waiting)
@@ -39,7 +42,6 @@ class MyDrawer extends StatelessWidget {
             {
               return Center(child: Text('Error: ${snapshot.error}'));
             }
-            bool isAdmin = snapshot.data ?? false;
             return Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -48,7 +50,7 @@ class MyDrawer extends StatelessWidget {
                                       const DrawerHeader(child: Icon(Icons.person_sharp)),
 
                                       const SizedBox(height:5),
-
+                                               
                                       Padding(
                                         padding: const EdgeInsets.only(left: 25),
                                         child : ListTile(
@@ -62,9 +64,10 @@ class MyDrawer extends StatelessWidget {
                                         ),
                                       ),            
 
-                                      const SizedBox(height:5),
+                                      const SizedBox(height:5),                                   
 
-                                      if(isAdmin)
+                                      if(user.isAdmin)      
+                                      ...[
                                         Padding(
                                           padding: const EdgeInsets.only(left: 25),
                                           child: ListTile(
@@ -78,6 +81,7 @@ class MyDrawer extends StatelessWidget {
                                           ),
                                         ),    
                                         const SizedBox(height: 5),
+                                      ],                                
 
                                       Padding(
                                         padding: const EdgeInsets.only(left: 25),
@@ -88,14 +92,14 @@ class MyDrawer extends StatelessWidget {
                                             Navigator.pop(context);
 
                                             Navigator.push(context, MaterialPageRoute(builder: (context) => 
-                                             isAdmin? ManagerUserProfilePage() : UserProfilePage()));
+                                             user.isAdmin? ManagerUserProfilePage() : UserProfilePage()));
                                           },
                                         ),
                                       ),    
-
+                                      
                                       const SizedBox(height: 5),
 
-                                                      Padding(
+                                      Padding(
                                         padding: const EdgeInsets.only(left: 25),
                                         child: ListTile(
                                           leading: const Icon(Icons.settings),    
@@ -129,10 +133,7 @@ class MyDrawer extends StatelessWidget {
                               ),
                             ],
             );
-          },
-
-
-         
+          },         
         ),             
       );  
     }
