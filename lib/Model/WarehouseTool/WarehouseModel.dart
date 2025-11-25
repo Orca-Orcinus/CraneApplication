@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import 'package:drift/drift.dart';
+import 'package:craneapplication/features/app_database.dart';
 
 /// Warehouse Model Class for managing inventory, suppliers, purchase orders, and deliveries
 /// This model supports operations across multiple database tables/collections
@@ -8,7 +10,7 @@ class WarehouseModel {
   // Primary identifiers
   final String id;
   final String itemId;
-  final String? supplierId;
+  final int? supplierRefId;
 
   // Item information
   final String itemName;
@@ -52,7 +54,7 @@ class WarehouseModel {
   WarehouseModel({
     String? id,
     required this.itemId,
-    this.supplierId,
+    this.supplierRefId,
     required this.itemName,
     this.itemDescription = '',
     this.category = '',
@@ -87,7 +89,6 @@ class WarehouseModel {
     return {
       'id': id,
       'itemId': itemId,
-      'supplierId': supplierId,
       'itemName': itemName,
       'itemDescription': itemDescription,
       'category': category,
@@ -117,6 +118,7 @@ class WarehouseModel {
       'updatedAt': updatedAt,
       'createdBy': createdBy,
       'notes': notes,
+      'supplierRefId': supplierRefId,
     };
   }
 
@@ -125,7 +127,7 @@ class WarehouseModel {
     return WarehouseModel(
       id: docId ?? json['id'],
       itemId: json['itemId'] ?? '',
-      supplierId: json['supplierId'],
+      supplierRefId: json['supplierRefId'],
       itemName: json['itemName'] ?? '',
       itemDescription: json['itemDescription'] ?? '',
       category: json['category'] ?? '',
@@ -156,6 +158,42 @@ class WarehouseModel {
     );
   }
 
+  /// Create a WarehouseModel from a DB row (generated data class `WarehouseItem`).
+  factory WarehouseModel.fromDb(WarehouseItem row) {
+    return WarehouseModel(
+      id: row.itemId ?? row.id.toString(),
+      itemId: row.itemId,
+      itemName: row.itemName,
+      itemDescription: row.itemDescription ?? '',
+      category: row.category ?? '',
+      sku: row.sku ?? '',
+      unitCost: row.unitCost,
+      supplierName: row.supplierName ?? '',
+      supplierContact: row.supplierContact ?? '',
+      supplierEmail: row.supplierEmail ?? '',
+      supplierPhone: row.supplierPhone ?? '',
+      supplierRefId: row.supplierRef,
+      quantity: row.quantity,
+      minStockLevel: row.minStockLevel,
+      maxStockLevel: row.maxStockLevel,
+      unit: row.unit ?? 'pcs',
+      warehouseLocation: row.warehouseLocation ?? '',
+      purchaseOrderNumber: row.purchaseOrderNumber ?? '',
+      deliveryOrderNumber: row.deliveryOrderNumber,
+      purchaseOrderDate: row.purchaseOrderDate,
+      expectedDeliveryDate: row.expectedDeliveryDate,
+      actualDeliveryDate: row.actualDeliveryDate,
+      orderStatus: row.orderStatus,
+      deliveryStatus: row.deliveryStatus,
+      totalAmount: row.totalAmount,
+      paymentStatus: row.paymentStatus,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      createdBy: row.createdBy ?? '',
+      notes: row.notes,
+    );
+  }
+
   /// Helper to parse a dynamic value into DateTime.
   /// Supports Firestore `Timestamp`, `DateTime`, ISO `String`, and milliseconds `int`.
   static DateTime? _parseDate(dynamic value) {
@@ -180,7 +218,7 @@ class WarehouseModel {
   WarehouseModel copyWith({
     String? id,
     String? itemId,
-    String? supplierId,
+    int? supplierRefId,
     String? itemName,
     String? itemDescription,
     String? category,
@@ -212,7 +250,7 @@ class WarehouseModel {
     return WarehouseModel(
       id: id ?? this.id,
       itemId: itemId ?? this.itemId,
-      supplierId: supplierId ?? this.supplierId,
+      supplierRefId: supplierRefId ?? this.supplierRefId,
       itemName: itemName ?? this.itemName,
       itemDescription: itemDescription ?? this.itemDescription,
       category: category ?? this.category,
@@ -246,6 +284,44 @@ class WarehouseModel {
   @override
   String toString() {
     return 'WarehouseModel(id: $id, itemName: $itemName, quantity: $quantity, orderStatus: $orderStatus)';
+  }
+}
+
+extension WarehouseModelDb on WarehouseModel {
+  /// Convert this WarehouseModel into a Drift companion for insertion/update.
+  Insertable<WarehouseItem> toCompanion() {
+    return WarehouseItemsCompanion(
+      // id is autoincrement in DB - don't include it when saving from Firestore model
+      itemId: Value(itemId),
+      itemName: Value(itemName),
+      itemDescription: itemDescription.isEmpty ? const Value.absent() : Value(itemDescription),
+      category: category.isEmpty ? const Value.absent() : Value(category),
+      sku: sku.isEmpty ? const Value.absent() : Value(sku),
+      unitCost: Value(unitCost),
+      supplierName: supplierName.isEmpty ? const Value.absent() : Value(supplierName),
+      supplierContact: supplierContact.isEmpty ? const Value.absent() : Value(supplierContact),
+      supplierEmail: supplierEmail.isEmpty ? const Value.absent() : Value(supplierEmail),
+      supplierPhone: supplierPhone.isEmpty ? const Value.absent() : Value(supplierPhone),
+      quantity: Value(quantity),
+      minStockLevel: Value(minStockLevel),
+      maxStockLevel: Value(maxStockLevel),
+      unit: Value(unit),
+      warehouseLocation: warehouseLocation.isEmpty ? const Value.absent() : Value(warehouseLocation),
+      purchaseOrderNumber: purchaseOrderNumber.isEmpty ? const Value.absent() : Value(purchaseOrderNumber),
+      deliveryOrderNumber: deliveryOrderNumber == null ? const Value.absent() : Value(deliveryOrderNumber!),
+      purchaseOrderDate: purchaseOrderDate == null ? const Value.absent() : Value(purchaseOrderDate!),
+      expectedDeliveryDate: expectedDeliveryDate == null ? const Value.absent() : Value(expectedDeliveryDate!),
+      actualDeliveryDate: actualDeliveryDate == null ? const Value.absent() : Value(actualDeliveryDate!),
+      orderStatus: Value(orderStatus),
+      deliveryStatus: Value(deliveryStatus),
+      totalAmount: Value(totalAmount),
+      paymentStatus: Value(paymentStatus),
+      createdAt: createdAt == null ? const Value.absent() : Value(createdAt!),
+      updatedAt: updatedAt == null ? const Value.absent() : Value(updatedAt!),
+      createdBy: createdBy.isEmpty ? const Value.absent() : Value(createdBy),
+      notes: notes == null ? const Value.absent() : Value(notes!),
+      supplierRef: supplierRefId == null ? const Value.absent() : Value(supplierRefId),
+    );
   }
 }
 

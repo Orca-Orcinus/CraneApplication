@@ -5,10 +5,11 @@ class FireStoreService
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   //Create
-  Future<void> addData({required String collection,required Map<String,dynamic> data})
-  {
-    return _db.collection(collection).add(data);
-  }   
+  /// Adds [data] to [collection] and returns the created document id.
+  Future<String> addData({required String collection, required Map<String,dynamic> data}) async {
+    final ref = await _db.collection(collection).add(data);
+    return ref.id;
+  }
 
   //Read
   Future<List<Map<String,dynamic>>> getData({

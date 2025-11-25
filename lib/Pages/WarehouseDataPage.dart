@@ -1,9 +1,14 @@
-import 'package:craneapplication/features/auth/firebasestore.dart';
+import 'package:craneapplication/features/app_database.dart';
+import 'package:craneapplication/features/dao/warehouse_dao.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+// Only import `Value` from drift here to avoid symbol clashes with Flutter widgets
+// Only import `Value` from drift here to avoid symbol clashes with Flutter widgets
+import 'package:drift/drift.dart' show Value;
 import 'package:intl/intl.dart';
-import 'package:craneapplication/Model/WarehouseTool/WarehouseModel.dart';
 import 'package:craneapplication/components/MyDrawer.dart';
+import 'package:craneapplication/features/auth/firebasestore.dart';
+import 'package:craneapplication/features/sync/sync_service.dart';
 
 class WarehouseDataPage extends StatefulWidget {
   const WarehouseDataPage({super.key});
@@ -13,7 +18,10 @@ class WarehouseDataPage extends StatefulWidget {
 }
 
 class _WarehouseDataPageState extends State<WarehouseDataPage> {
-  final WarehouseDatabaseController _dbController = WarehouseDatabaseController();
+  // final WarehouseDatabaseController _dbController = WarehouseDatabaseController();
+  final db = AppDatabase();
+  late final WarehouseDao _warehouseDao;
+
   String _selectedFilter = 'all'; // all, pending, delivered, low_stock
   DateTime? _selectedDate;
   String _searchQuery = '';
@@ -21,38 +29,37 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
   @override
   void initState() {
     super.initState();
+    // use the same DB instance for the DAO
+    _warehouseDao = WarehouseDao(db);
   }
 
-  Future<List<WarehouseModel>> _getFilteredWarehouses() async {
-    List<WarehouseModel> items;
+  Future<List<WarehouseItem>> _getFilteredWarehouses() async {
+    List<WarehouseItem> items;
 
     switch (_selectedFilter) {
       case 'pending':
-        items = await _dbController.getWarehousesByOrderStatus('pending');
+        items = await _warehouseDao.getWarehousesByOrderStatus('pending');
         break;
       case 'delivered':
-        items = await _dbController.getWarehousesByOrderStatus('delivered');
+        items = await _warehouseDao.getWarehousesByOrderStatus('delivered');
         break;
       case 'low_stock':
-        items = await _dbController.getLowStockItems();
+        items = await _warehouseDao.getLowStockItems();
         break;
       default:
-        items = await _dbController.getAllWarehouses();
+        items = await _warehouseDao.getAll();
     }
 
     // Apply search filter
     if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
       items = items
-          .where((item) =>
-              item.itemName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              item.sku.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              item.supplierName
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase()) ||
-              item.purchaseOrderNumber
-                  .toLowerCase()
-                  .contains(_searchQuery.toLowerCase()))
-          .toList();
+        .where((item) =>
+          item.itemName.toLowerCase().contains(q) ||
+          (item.sku ?? '').toLowerCase().contains(q) ||
+          (item.supplierName ?? '').toLowerCase().contains(q) ||
+          (item.purchaseOrderNumber ?? '').toLowerCase().contains(q))
+        .toList();
     }
 
     return items;
@@ -77,6 +84,23 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Warehouse Data Management'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sync Now',
+            onPressed: () async {
+              final svc = SyncService(db, FireStoreService());
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sync started — please wait...')));
+              try {
+                await svc.syncAll();
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sync finished')));
+                setState(() {});
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sync failed: $e')));
+              }
+            },
+          )
+        ],
         elevation: 0,
       ),
       drawer: MyDrawer(),
@@ -145,7 +169,7 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
                 ),
                 // Data Table
                 Expanded(
-                  child: FutureBuilder<List<WarehouseModel>>(
+                  child: FutureBuilder<List<WarehouseItem>>(
                     future: _getFilteredWarehouses(),
                     builder: (context, dataSnapshot) {
                       if (dataSnapshot.connectionState ==
@@ -236,8 +260,8 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
                                 ),
                                 cells: [
                                   DataCell(Text(item.itemName)),
-                                  DataCell(Text(item.sku)),
-                                  DataCell(Text(item.supplierName)),
+                                  DataCell(Text(item.sku ?? '—')),
+                                  DataCell(Text(item.supplierName ?? '—')),
                                   DataCell(
                                     Text(
                                       item.quantity.toString(),
@@ -254,7 +278,7 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
                                       '\$${item.unitCost.toStringAsFixed(2)}')),
                                   DataCell(Text(
                                       '\$${(item.quantity * item.unitCost).toStringAsFixed(2)}')),
-                                  DataCell(Text(item.purchaseOrderNumber)),
+                                  DataCell(Text(item.purchaseOrderNumber ?? '—')),
                                   DataCell(Text(
                                       item.deliveryOrderNumber ?? 'N/A')),
                                   DataCell(_buildStatusBadge(
@@ -263,7 +287,7 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
                                       item.deliveryStatus, Colors.orange)),
                                   DataCell(_buildStatusBadge(
                                       item.paymentStatus, Colors.green)),
-                                  DataCell(Text(item.warehouseLocation)),
+                                  DataCell(Text(item.warehouseLocation ?? '—')),
                                 ],
                                 onSelectChanged: (_) {
                                   _showItemDetails(context, item);
@@ -320,7 +344,7 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
     );
   }
 
-  void _showItemDetails(BuildContext context, WarehouseModel item) {
+  void _showItemDetails(BuildContext context, WarehouseItem item) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -329,12 +353,12 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
           content: SingleChildScrollView(
             child: ListBody(
               children: [
-                _buildDetailRow('SKU', item.sku),
-                _buildDetailRow('Category', item.category),
-                _buildDetailRow('Supplier', item.supplierName),
-                _buildDetailRow('Contact', item.supplierContact),
-                _buildDetailRow('Email', item.supplierEmail),
-                _buildDetailRow('Phone', item.supplierPhone),
+                _buildDetailRow('SKU', item.sku ?? '—'),
+                _buildDetailRow('Category', item.category ?? '—'),
+                _buildDetailRow('Supplier', item.supplierName ?? '—'),
+                _buildDetailRow('Contact', item.supplierContact ?? '—'),
+                _buildDetailRow('Email', item.supplierEmail ?? '—'),
+                _buildDetailRow('Phone', item.supplierPhone ?? '—'),
                 const Divider(),
                 _buildDetailRow('Quantity', item.quantity.toString()),
                 _buildDetailRow(
@@ -342,13 +366,13 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
                 _buildDetailRow(
                     'Max Stock Level', item.maxStockLevel.toString()),
                 _buildDetailRow('Unit', item.unit),
-                _buildDetailRow('Location', item.warehouseLocation),
+                _buildDetailRow('Location', item.warehouseLocation ?? '—'),
                 const Divider(),
                 _buildDetailRow('Unit Cost', '\$${item.unitCost}'),
                 _buildDetailRow('Total Value',
                     '\$${(item.quantity * item.unitCost).toStringAsFixed(2)}'),
                 _buildDetailRow(
-                    'PO Number', item.purchaseOrderNumber),
+                  'PO Number', item.purchaseOrderNumber ?? '—'),
                 _buildDetailRow(
                     'DO Number', item.deliveryOrderNumber ?? 'N/A'),
                 _buildDetailRow('Order Status', item.orderStatus),
@@ -405,10 +429,7 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
 
                 if (confirm == true) {
                   try {
-                    if (item.id == null) {
-                      throw Exception('Item ID is null');
-                    }
-                    await _dbController.deleteWarehouse(item.id!);
+                    await _warehouseDao.deleteItem(item);
                     if (mounted) {
                       Navigator.pop(context); // close details dialog
                       setState(() {});
@@ -462,7 +483,7 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
     );
   }
 
-  void _showEditDialog(BuildContext context, WarehouseModel item) {
+  void _showEditDialog(BuildContext context,  WarehouseItem item) {
     final quantityController =
         TextEditingController(text: item.quantity.toString());
     final orderStatusController = TextEditingController(text: item.orderStatus);
@@ -575,10 +596,8 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
 
                 if (confirm == true) {
                   try {
-                    if (item.id == null) {
-                      throw Exception('Item ID is null');
-                    }
-                    await _dbController.deleteWarehouse(item.id!);
+                    // item.id is non-null for DB rows (generated class), just delete
+                    await _warehouseDao.deleteItem(item);
                     if (mounted) {
                       Navigator.pop(context); // close edit dialog
                       setState(() {});
@@ -607,7 +626,7 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
                     deliveryStatus: deliveryStatusController.text,
                     paymentStatus: paymentStatusController.text,
                   );
-                  await _dbController.saveWarehouse(updatedItem);
+                  await _warehouseDao.updateItem(updatedItem);
                   if (mounted) {
                     Navigator.pop(context);
                     setState(() {});
@@ -721,33 +740,36 @@ class _WarehouseDataPageState extends State<WarehouseDataPage> {
               onPressed: () async {
                 try {
                   final createdBy = FirebaseAuth.instance.currentUser?.uid ?? 'system';
-                  final newItem = WarehouseModel(
-                    itemId: itemIdController.text.isNotEmpty ? itemIdController.text : DateTime.now().microsecondsSinceEpoch.toString(),
-                    itemName: itemNameController.text,
-                    itemDescription: '',
-                    category: '',
-                    sku: skuController.text,
-                    unitCost: double.tryParse(unitCostController.text) ?? 0.0,
-                    supplierName: supplierController.text,
-                    supplierContact: '',
-                    supplierEmail: '',
-                    supplierPhone: '',
-                    quantity: int.tryParse(quantityController.text) ?? 0,
-                    minStockLevel: int.tryParse(minController.text) ?? 0,
-                    maxStockLevel: int.tryParse(maxController.text) ?? 1000,
-                    unit: unitController.text,
-                    warehouseLocation: locationController.text,
-                    purchaseOrderNumber: poController.text,
-                    deliveryOrderNumber: doController.text.isNotEmpty ? doController.text : null,
-                    orderStatus: 'pending',
-                    deliveryStatus: 'not_ordered',
-                    totalAmount: (double.tryParse(unitCostController.text) ?? 0.0) * (int.tryParse(quantityController.text) ?? 0),
-                    paymentStatus: 'unpaid',
-                    createdBy: createdBy,
-                    notes: notesController.text.isNotEmpty ? notesController.text : null,
+
+                  final companion = WarehouseItemsCompanion(
+                    itemId: Value(itemIdController.text.isNotEmpty
+                        ? itemIdController.text
+                        : DateTime.now().microsecondsSinceEpoch.toString()),
+                    itemName: Value(itemNameController.text),
+                    itemDescription: Value(''),
+                    category: Value(''),
+                    sku: Value(skuController.text.isNotEmpty ? skuController.text : null),
+                    unitCost: Value(double.tryParse(unitCostController.text) ?? 0.0),
+                    supplierName: Value(supplierController.text.isNotEmpty ? supplierController.text : null),
+                    supplierContact: Value(''),
+                    supplierEmail: Value(''),
+                    supplierPhone: Value(''),
+                    quantity: Value(int.tryParse(quantityController.text) ?? 0),
+                    minStockLevel: Value(int.tryParse(minController.text) ?? 0),
+                    maxStockLevel: Value(int.tryParse(maxController.text) ?? 1000),
+                    unit: Value(unitController.text),
+                    warehouseLocation: Value(locationController.text.isNotEmpty ? locationController.text : null),
+                    purchaseOrderNumber: Value(poController.text.isNotEmpty ? poController.text : null),
+                    deliveryOrderNumber: Value(doController.text.isNotEmpty ? doController.text : null),
+                    orderStatus: Value('pending'),
+                    deliveryStatus: Value('not_ordered'),
+                    totalAmount: Value((double.tryParse(unitCostController.text) ?? 0.0) * (int.tryParse(quantityController.text) ?? 0)),
+                    paymentStatus: Value('unpaid'),
+                    createdBy: Value(createdBy),
+                    notes: Value(notesController.text.isNotEmpty ? notesController.text : null),
                   );
 
-                  await _dbController.createWarehouse(newItem);
+                  await _warehouseDao.insertItem(companion);
                   if (mounted) {
                     Navigator.pop(context);
                     setState(() {});
