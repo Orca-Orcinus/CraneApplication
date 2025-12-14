@@ -31,11 +31,11 @@ class AuthServices {
   {
     await _ensureGoogleSignInInitialized();
     try {
-      final GoogleSignInAccount? gUser = await _googleSignIn.authenticate();
-      final GoogleSignInClientAuthorization? authorization = await gUser?.authorizationClient.authorizationForScopes(['email']);
+      final GoogleSignInAccount gUser = await _googleSignIn.authenticate();
+      final GoogleSignInClientAuthorization? authorization = await gUser.authorizationClient.authorizationForScopes(['email']);
       
       final credential = GoogleAuthProvider.credential(
-        idToken: gUser!.authentication.idToken,
+        idToken: gUser.authentication.idToken,
         accessToken: authorization?.accessToken,
       );
       return await FirebaseAuth.instance.signInWithCredential(credential);

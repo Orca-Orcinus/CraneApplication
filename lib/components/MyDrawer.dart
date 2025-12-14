@@ -17,7 +17,7 @@ class MyDrawer extends StatelessWidget {
   {
     var roleIndex = await user.checkUserRole();
     Rolesenum userRole = Rolesenum.values[roleIndex];
-    return await userRole;
+    return userRole;
   }
 
   void logout() async

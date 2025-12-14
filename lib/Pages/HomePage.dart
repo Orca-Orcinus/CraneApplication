@@ -1,8 +1,9 @@
 import 'package:craneapplication/Model/UserProfile/UserProfile.dart';
 import 'package:craneapplication/Model/UserProfile/userService.dart';
-import 'package:craneapplication/Pages/CraneSelectionPage.dart';
 import 'package:craneapplication/Pages/DisplayJobPage.dart';
+import 'package:craneapplication/Pages/GroupItemPage.dart';
 import 'package:craneapplication/Pages/LoginPage.dart';
+import 'package:craneapplication/Pages/StockDataPage.dart';
 import 'package:craneapplication/Pages/WarehouseDataPage.dart';
 import 'package:craneapplication/enum/RolesEnum.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -36,7 +37,7 @@ class _HomePageState extends State<HomePage>
   {
     var roleIndex = await _userService.checkUserRole();
     Rolesenum userRole = Rolesenum.values[roleIndex];
-    return await userRole;
+    return userRole;
   }  
 
   @override
@@ -60,11 +61,10 @@ class _HomePageState extends State<HomePage>
               {
                 return Center(child: Text("Error: ${roleSnapshot.error}"));
               }
-              if(roleSnapshot.data == Rolesenum.Administrator)
-                return const WarehouseDataPage();
-                //return const CraneSelectionPage();
-              else if(roleSnapshot.data == Rolesenum.Manager)
-                return const WarehouseDataPage();
+              if(roleSnapshot.data == Rolesenum.Administrator) {
+                return const GroupItemPage();
+              } else if(roleSnapshot.data == Rolesenum.Manager)              
+                return const GroupItemPage();
                 //return const DisplayJobPage();
               else if(roleSnapshot.data == Rolesenum.Account)
                 return const DisplayJobPage();
