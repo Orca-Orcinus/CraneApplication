@@ -1,3 +1,8 @@
+import 'dart:io';
+
+import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../Model/StockManagementModel/StockReceivedModel.dart';
 import '../Model/WarehouseTool/StockReceivedItem.dart';
@@ -166,6 +171,89 @@ class _StockReceivedItemState extends State<StockReceivedItemPage> {
       },
     );
   }
+
+   Future<void> _importFromFile(BuildContext context) async
+  {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv','xlsx'],
+        withData: true,
+      );
+
+      if(result == null) return; //user termination
+
+      final file = result.files.single;
+      final extension = file.extension?.toLowerCase();
+      final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+
+      List<List<dynamic>> parsedRows = [];
+
+      if(extension == "csv")
+      {
+        final csvString = String.fromCharCodes(bytes);
+
+        parsedRows = const CsvToListConverter(eol: "\n",shouldParseNumbers: false,).convert(csvString);
+      }
+      else if(extension == "xlsx")
+      {
+        final excel = Excel.decodeBytes(bytes);
+        final sheet = excel.tables.values.first;
+
+        if(sheet != null)
+        {
+          for(final row in sheet.rows)
+          {
+            parsedRows.add(row.map((cell) => cell?.value).toList());
+          }
+        }        
+      }
+      else
+      {
+        throw Exception("Unsupported File Type.");
+      }
+
+      final headers = _buildHeaderIndex(parsedRows.first);
+
+      for(int i = 1; i < parsedRows.length;i++)
+      {
+        final row = parsedRows[i];        
+
+        try {
+          final newItem = new StockReceivedModel(
+            itemCode: parsedRows[headers[0]!].toString(), 
+            itemDescription: parsedRows[headers[2]!].toString(),
+            unitOfMeasurement: parsedRows[headers[3]!].toString(),
+            quantityReceived: double.tryParse(parsedRows[headers[4]!].toString()) ?? 0.0,
+            location: parsedRows[headers[5]!].toString(),
+            project: parsedRows[headers[6]!].toString(),
+            subTotal: double.tryParse(parsedRows[headers[7]!].toString()) ?? 0.0,
+            );
+
+            await  _stockReceivedController.addStockReceivedItem(newItem);
+        } catch (e) {
+          if(!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed for $e")));
+        }
+      }
+
+    } catch (e) {
+      if(!mounted)
+        return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
+    }
+  }
+
+  Map<String, int> _buildHeaderIndex(List<dynamic> headerRow) {
+  final Map<String, int> indexMap = {};
+
+  for (int i = 0; i < headerRow.length; i++) {
+    final key = headerRow[i].toString().trim();
+    indexMap[key] = i;
+  }
+
+  return indexMap;
+}
 
   void _showItemDetails(BuildContext context, StockReceivedModel item) {
     showDialog(

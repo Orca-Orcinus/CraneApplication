@@ -1,3 +1,8 @@
+import 'dart:io';
+
+import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../Model/StockManagementModel/StockTransferModel.dart';
 import '../Model/WarehouseTool/StockTransferItem.dart';
@@ -12,7 +17,7 @@ class StockTransferItemPage extends StatefulWidget {
 }
 
 class _StockTransferItemState extends State<StockTransferItemPage> {
-  final StockTransferController _stockTransferControler = StockTransferController();
+  final StockTransferController _stockTransferController = StockTransferController();
 
   String _selectedFilter = 'all'; // all, in_stock, out_of_stock
   String _searchQuery = ''; //itemGroup search query
@@ -30,7 +35,7 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
       case 'all':
       default:
         // Fetch all items
-        allItems = await _stockTransferControler.fetchAllStockTransfers();
+        allItems = await _stockTransferController.fetchAllStockTransfers();
         break;
     }
 
@@ -76,6 +81,89 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
       ),
     );
   }
+
+  Future<void> _importFromFile(BuildContext context) async
+  {
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['csv','xlsx'],
+          withData: true,
+        );
+
+        if(result == null) return; //user termination
+
+        final file = result.files.single;
+        final extension = file.extension?.toLowerCase();
+        final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+
+        List<List<dynamic>> parsedRows = [];
+
+        if(extension == "csv")
+        {
+          final csvString = String.fromCharCodes(bytes);
+
+          parsedRows = const CsvToListConverter(eol: "\n",shouldParseNumbers: false,).convert(csvString);
+        }
+        else if(extension == "xlsx")
+        {
+          final excel = Excel.decodeBytes(bytes);
+          final sheet = excel.tables.values.first;
+
+          if(sheet != null)
+          {
+            for(final row in sheet.rows)
+            {
+              parsedRows.add(row.map((cell) => cell?.value).toList());
+            }
+          }        
+        }
+        else
+        {
+          throw Exception("Unsupported File Type.");
+        }
+
+        final headers = _buildHeaderIndex(parsedRows.first);
+
+        for(int i = 1; i < parsedRows.length;i++)
+        {
+          final row = parsedRows[i];        
+
+          try {
+            final newItem = new StockTransferModel(
+              itemCode: parsedRows[headers[0]!].toString(), 
+              itemDescription: parsedRows[headers[2]!].toString(),
+              fromLocation: parsedRows[headers[3]!].toString(),
+              toLocation: parsedRows[headers[4]!].toString(),
+              unitOfMeasurement: parsedRows[headers[5]!].toString(),
+              quantityTransferred: double.tryParse([headers[6]!].toString()) ?? 0.0,
+              );
+
+              await _stockTransferController.addStockTransfer(newItem);
+          } catch (e) {
+            if(!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed for $e")));
+          }
+        }
+
+      } catch (e) {
+        if(!mounted)
+          return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
+      }
+    }
+
+    Map<String, int> _buildHeaderIndex(List<dynamic> headerRow) {
+    final Map<String, int> indexMap = {};
+
+    for (int i = 0; i < headerRow.length; i++) {
+      final key = headerRow[i].toString().trim();
+      indexMap[key] = i;
+    }
+
+    return indexMap;
+  }
+
 
   void _showEditDialog(BuildContext context,StockTransferModel item)
   {
@@ -134,7 +222,7 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
                     quantityTransferred: double.tryParse(quantityTransferredController.text) ?? 0.0,
                     unitOfMeasurement: uomController.text,
                   );
-                  await _stockTransferControler.updateStockTransfer(updatedItem);
+                  await _stockTransferController.updateStockTransfer(updatedItem);
                   if(mounted)
                   {
                     Navigator.of(context).pop();
@@ -208,7 +296,7 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
                 if(confirm == true)
                 {
                   try{
-                    await _stockTransferControler.deleteStockTransfer(item);
+                    await _stockTransferController.deleteStockTransfer(item);
                     if(mounted)
                     {
                       Navigator.of(context).pop(); // Close details dialog
@@ -304,7 +392,7 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
                     unitOfMeasurement: _uomController.text,
                     quantityTransferred: double.tryParse(_quantityController.text) ?? 0.0,
                   );
-                  await _stockTransferControler.addStockTransfer(newItem);
+                  await _stockTransferController.addStockTransfer(newItem);
                   if(mounted)
                   {
                     Navigator.of(context).pop();

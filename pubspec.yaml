@@ -57,6 +57,9 @@ dependencies:
   drift: ^2.29.0
   sqlite3_flutter_libs: ^0.5.40
   path: ^1.8.3
+  file_picker: ^6.1.1
+  csv: ^5.0.2
+  excel: ^4.0.2
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
