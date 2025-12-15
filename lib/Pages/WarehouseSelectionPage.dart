@@ -32,7 +32,9 @@ class _WarehouseSelectionPageState extends State<WarehouseSelectionPage> {
             {
               return const Center(child: CircularProgressIndicator());
             }
-            return Column(
+            return Center(
+              child: Column(                           
+              mainAxisSize: MainAxisSize.min,
               children: [
                 MyButton(btnName: "Stock Item", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const StockDataPage()))),
 
@@ -49,7 +51,8 @@ class _WarehouseSelectionPageState extends State<WarehouseSelectionPage> {
                 MyButton(btnName: "Group Item", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const GroupItemPage()))),
 
                 const SizedBox(height: 10),
-              ]);
+              ]),
+            );
           }
           else
           {

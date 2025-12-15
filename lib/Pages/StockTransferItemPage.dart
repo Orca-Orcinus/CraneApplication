@@ -110,14 +110,11 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
           final excel = Excel.decodeBytes(bytes);
           final sheet = excel.tables.values.first;
 
-          if(sheet != null)
+          for(final row in sheet.rows)
           {
-            for(final row in sheet.rows)
-            {
-              parsedRows.add(row.map((cell) => cell?.value).toList());
-            }
-          }        
-        }
+            parsedRows.add(row.map((cell) => cell?.value).toList());
+          }
+                }
         else
         {
           throw Exception("Unsupported File Type.");
@@ -130,7 +127,7 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
           final row = parsedRows[i];        
 
           try {
-            final newItem = new StockTransferModel(
+            final newItem = StockTransferModel(
               itemCode: parsedRows[headers[0]!].toString(), 
               itemDescription: parsedRows[headers[2]!].toString(),
               fromLocation: parsedRows[headers[3]!].toString(),
@@ -147,8 +144,9 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
         }
 
       } catch (e) {
-        if(!mounted)
+        if(!mounted) {
           return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
       }
     }
@@ -333,12 +331,12 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
   }
 
   void _showAddItemDialog(BuildContext context) {
-    final _itemCodeController = TextEditingController();
-    final _itemDescriptionController = TextEditingController();
-    final _fromLocationController = TextEditingController();
-    final _toLocationController = TextEditingController();
-    final _quantityController = TextEditingController();
-    final _uomController = TextEditingController();
+    final itemCodeController = TextEditingController();
+    final itemDescriptionController = TextEditingController();
+    final fromLocationController = TextEditingController();
+    final toLocationController = TextEditingController();
+    final quantityController = TextEditingController();
+    final uomController = TextEditingController();
 
     showDialog(
       context: context,
@@ -349,27 +347,27 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
             child: Column(
               children: [
                 TextField(
-                  controller: _itemCodeController,
+                  controller: itemCodeController,
                   decoration: const InputDecoration(labelText: "Item Code"),
                 ),
                 TextField(
-                  controller: _itemDescriptionController,
+                  controller: itemDescriptionController,
                   decoration: const InputDecoration(labelText: "Item Description"),
                 ),
                 TextField(
-                  controller: _fromLocationController,
+                  controller: fromLocationController,
                   decoration: const InputDecoration(labelText: "From Location"),                  
                 ),
                 TextField(
-                  controller: _toLocationController,
+                  controller: toLocationController,
                   decoration: const InputDecoration(labelText: "To Location"),
                 ),
                 TextField(
-                  controller: _uomController,
+                  controller: uomController,
                   decoration: const InputDecoration(labelText: "Unit of Measurement"),
                 ),
                 TextField(
-                  controller: _quantityController,
+                  controller: quantityController,
                   decoration: const InputDecoration(labelText: "Quantity Transferred"),
                   keyboardType: TextInputType.number,
                 ),
@@ -385,12 +383,12 @@ class _StockTransferItemState extends State<StockTransferItemPage> {
               onPressed: () async {
                 try{
                   final newItem = StockTransferModel(
-                    itemCode: _itemCodeController.text,
-                    itemDescription: _itemDescriptionController.text,
-                    fromLocation: _fromLocationController.text,
-                    toLocation: _toLocationController.text,
-                    unitOfMeasurement: _uomController.text,
-                    quantityTransferred: double.tryParse(_quantityController.text) ?? 0.0,
+                    itemCode: itemCodeController.text,
+                    itemDescription: itemDescriptionController.text,
+                    fromLocation: fromLocationController.text,
+                    toLocation: toLocationController.text,
+                    unitOfMeasurement: uomController.text,
+                    quantityTransferred: double.tryParse(quantityController.text) ?? 0.0,
                   );
                   await _stockTransferController.addStockTransfer(newItem);
                   if(mounted)

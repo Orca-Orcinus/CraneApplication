@@ -194,14 +194,11 @@ class _StockDataState extends State<StockDataPage> {
           final excel = Excel.decodeBytes(bytes);
           final sheet = excel.tables.values.first;
 
-          if(sheet != null)
+          for(final row in sheet.rows)
           {
-            for(final row in sheet.rows)
-            {
-              parsedRows.add(row.map((cell) => cell?.value).toList());
-            }
-          }        
-        }
+            parsedRows.add(row.map((cell) => cell?.value).toList());
+          }
+                }
         else
         {
           throw Exception("Unsupported File Type.");
@@ -214,7 +211,7 @@ class _StockDataState extends State<StockDataPage> {
           final row = parsedRows[i];        
 
           try {
-            final newItem = new StockItemModel(
+            final newItem = StockItemModel(
               itemCode: parsedRows[headers[0]!].toString(), 
               itemDescription: parsedRows[headers[2]!].toString(),
               itemGroup: parsedRows[headers[3]!].toString(),
@@ -231,8 +228,9 @@ class _StockDataState extends State<StockDataPage> {
         }
 
       } catch (e) {
-        if(!mounted)
+        if(!mounted) {
           return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
       }
     }
@@ -333,12 +331,12 @@ class _StockDataState extends State<StockDataPage> {
   }
 
   void _showAddItemDialog(BuildContext context) {
-    final _itemCodeController = TextEditingController();
-    final _itemDescriptionController = TextEditingController();
-    final _itemGroupController = TextEditingController();
-    final _uomController = TextEditingController();
-    final _purchaseCostController = TextEditingController();
-    final _salesPriceController = TextEditingController();
+    final itemCodeController = TextEditingController();
+    final itemDescriptionController = TextEditingController();
+    final itemGroupController = TextEditingController();
+    final uomController = TextEditingController();
+    final purchaseCostController = TextEditingController();
+    final salesPriceController = TextEditingController();
 
     showDialog(
       context: context,
@@ -349,28 +347,28 @@ class _StockDataState extends State<StockDataPage> {
             child: Column(
               children: [
                 TextField(
-                  controller: _itemCodeController,
+                  controller: itemCodeController,
                   decoration: const InputDecoration(labelText: "Item Code"),
                 ),
                 TextField(
-                  controller: _itemDescriptionController,
+                  controller: itemDescriptionController,
                   decoration: const InputDecoration(labelText: "Item Description"),
                 ),
                 TextField(
-                  controller: _itemGroupController,
+                  controller: itemGroupController,
                   decoration: const InputDecoration(labelText: "Item Group"),
                 ),
                 TextField(
-                  controller: _uomController,
+                  controller: uomController,
                   decoration: const InputDecoration(labelText: "Unit of Measurement"),
                 ),
                 TextField(
-                  controller: _purchaseCostController,
+                  controller: purchaseCostController,
                   decoration: const InputDecoration(labelText: "Purchase Cost"),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
-                  controller: _salesPriceController,
+                  controller: salesPriceController,
                   decoration: const InputDecoration(labelText: "Sales Price"),
                   keyboardType: TextInputType.number,
                 ),
@@ -386,12 +384,12 @@ class _StockDataState extends State<StockDataPage> {
               onPressed: () async {
                 try{
                   final newItem = StockItemModel(
-                    itemCode: _itemCodeController.text,
-                    itemDescription: _itemDescriptionController.text,
-                    itemGroup: _itemGroupController.text,
-                    unitOfMeasurement: _uomController.text,
-                    purchaseCost: double.tryParse(_purchaseCostController.text) ?? 0.0,
-                    salesPrice: double.tryParse(_salesPriceController.text) ?? 0.0,
+                    itemCode: itemCodeController.text,
+                    itemDescription: itemDescriptionController.text,
+                    itemGroup: itemGroupController.text,
+                    unitOfMeasurement: uomController.text,
+                    purchaseCost: double.tryParse(purchaseCostController.text) ?? 0.0,
+                    salesPrice: double.tryParse(salesPriceController.text) ?? 0.0,
                   );
                   await _stockItemController.createStockItem(newItem);
                   if(mounted)

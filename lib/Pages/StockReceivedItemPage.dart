@@ -200,14 +200,11 @@ class _StockReceivedItemState extends State<StockReceivedItemPage> {
         final excel = Excel.decodeBytes(bytes);
         final sheet = excel.tables.values.first;
 
-        if(sheet != null)
+        for(final row in sheet.rows)
         {
-          for(final row in sheet.rows)
-          {
-            parsedRows.add(row.map((cell) => cell?.value).toList());
-          }
-        }        
-      }
+          parsedRows.add(row.map((cell) => cell?.value).toList());
+        }
+            }
       else
       {
         throw Exception("Unsupported File Type.");
@@ -220,7 +217,7 @@ class _StockReceivedItemState extends State<StockReceivedItemPage> {
         final row = parsedRows[i];        
 
         try {
-          final newItem = new StockReceivedModel(
+          final newItem = StockReceivedModel(
             itemCode: parsedRows[headers[0]!].toString(), 
             itemDescription: parsedRows[headers[2]!].toString(),
             unitOfMeasurement: parsedRows[headers[3]!].toString(),
@@ -238,8 +235,9 @@ class _StockReceivedItemState extends State<StockReceivedItemPage> {
       }
 
     } catch (e) {
-      if(!mounted)
+      if(!mounted) {
         return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
     }
   }
@@ -341,13 +339,13 @@ class _StockReceivedItemState extends State<StockReceivedItemPage> {
   }
 
   void _showAddItemDialog(BuildContext context) {
-    final _itemCodeController = TextEditingController();
-    final _itemDescriptionController = TextEditingController();
-    final _uomController = TextEditingController();
-    final _quantityController = TextEditingController();
-    final _locationController = TextEditingController();
-    final _projectController = TextEditingController();
-    final _subTotalController = TextEditingController();
+    final itemCodeController = TextEditingController();
+    final itemDescriptionController = TextEditingController();
+    final uomController = TextEditingController();
+    final quantityController = TextEditingController();
+    final locationController = TextEditingController();
+    final projectController = TextEditingController();
+    final subTotalController = TextEditingController();
 
     showDialog(
       context: context,
@@ -358,32 +356,32 @@ class _StockReceivedItemState extends State<StockReceivedItemPage> {
             child: Column(
               children: [
                 TextField(
-                  controller: _itemCodeController,
+                  controller: itemCodeController,
                   decoration: const InputDecoration(labelText: "Item Code"),
                 ),
                 TextField(
-                  controller: _itemDescriptionController,
+                  controller: itemDescriptionController,
                   decoration: const InputDecoration(labelText: "Item Description"),
                 ),
                 TextField(
-                  controller: _uomController,
+                  controller: uomController,
                   decoration: const InputDecoration(labelText: "Unit of Measurement"),
                 ),
                 TextField(
-                  controller: _quantityController,
+                  controller: quantityController,
                   decoration: const InputDecoration(labelText: "Quantity Received"),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
-                  controller: _locationController,
+                  controller: locationController,
                   decoration: const InputDecoration(labelText: "Location"),
                 ),
                 TextField(
-                  controller: _projectController,
+                  controller: projectController,
                   decoration: const InputDecoration(labelText: "Project"),
                 ),
                 TextField(
-                  controller: _subTotalController,
+                  controller: subTotalController,
                   decoration: const InputDecoration(labelText: "Sub Total"),
                   keyboardType: TextInputType.number,
                 ),
@@ -399,13 +397,13 @@ class _StockReceivedItemState extends State<StockReceivedItemPage> {
               onPressed: () async {
                 try{
                   final newItem = StockReceivedModel(
-                    itemCode: _itemCodeController.text,
-                    itemDescription: _itemDescriptionController.text,
-                    unitOfMeasurement: _uomController.text,
-                    quantityReceived: double.tryParse(_quantityController.text) ?? 0.0,
-                    location: _locationController.text,
-                    project: _projectController.text,
-                    subTotal: double.tryParse(_subTotalController.text) ?? 0.0,
+                    itemCode: itemCodeController.text,
+                    itemDescription: itemDescriptionController.text,
+                    unitOfMeasurement: uomController.text,
+                    quantityReceived: double.tryParse(quantityController.text) ?? 0.0,
+                    location: locationController.text,
+                    project: projectController.text,
+                    subTotal: double.tryParse(subTotalController.text) ?? 0.0,
                   );
                   await _stockReceivedController.addStockReceivedItem(newItem);
                   if(mounted)

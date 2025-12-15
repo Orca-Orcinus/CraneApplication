@@ -276,14 +276,14 @@ class _GroupItemPageState extends State<GroupItemPage> {
   }
 
   void _showAddItemDialog(BuildContext context) {
-    final _itemCodeController = TextEditingController();
-    final _itemDescriptionController = TextEditingController();
-    final _itemSalesCode = TextEditingController();
-    final _itemCashSalesCode = TextEditingController();
-    final _itemSalesReturnCode = TextEditingController();
-    final _itemPurchaseCode = TextEditingController();
-    final _itemCashPurchaseCode = TextEditingController();
-    final _itemPurchaseReturnCode = TextEditingController();
+    final itemCodeController = TextEditingController();
+    final itemDescriptionController = TextEditingController();
+    final itemSalesCode = TextEditingController();
+    final itemCashSalesCode = TextEditingController();
+    final itemSalesReturnCode = TextEditingController();
+    final itemPurchaseCode = TextEditingController();
+    final itemCashPurchaseCode = TextEditingController();
+    final itemPurchaseReturnCode = TextEditingController();
 
     showDialog(
       context: context,
@@ -294,35 +294,35 @@ class _GroupItemPageState extends State<GroupItemPage> {
             child:Column(
               children: [
                 TextField(
-                  controller: _itemCodeController,
+                  controller: itemCodeController,
                   decoration: const InputDecoration(labelText: 'Item Code'),
                 ),
                 TextField(
-                  controller: _itemDescriptionController,
+                  controller: itemDescriptionController,
                   decoration: const InputDecoration(labelText: 'Item Description'),
                 ),
                 TextField(
-                  controller: _itemSalesCode,
+                  controller: itemSalesCode,
                   decoration: const InputDecoration(labelText: 'Sales Code'),
                 ),                
                 TextField(
-                  controller: _itemCashSalesCode,
+                  controller: itemCashSalesCode,
                   decoration: const InputDecoration(labelText: 'Cash Sales Code'),
                 ),                
                 TextField(
-                  controller: _itemSalesReturnCode,
+                  controller: itemSalesReturnCode,
                   decoration: const InputDecoration(labelText: 'Sales Return Code'),
                 ),                
                 TextField(
-                  controller: _itemPurchaseCode,
+                  controller: itemPurchaseCode,
                   decoration: const InputDecoration(labelText: 'Purchase Code'),
                 ),                
                 TextField(
-                  controller: _itemCashPurchaseCode,
+                  controller: itemCashPurchaseCode,
                   decoration: const InputDecoration(labelText: 'Cash Purchase Code'),
                 ),                
                 TextField(
-                  controller: _itemPurchaseReturnCode,
+                  controller: itemPurchaseReturnCode,
                   decoration: const InputDecoration(labelText: 'Purchase Return Code'),
                 ),
               ],
@@ -339,14 +339,14 @@ class _GroupItemPageState extends State<GroupItemPage> {
               onPressed: () async {
                 try{
                   final newItem = GroupItemModel(
-                    itemCode: _itemCodeController.text,
-                    itemDescription: _itemDescriptionController.text,
-                    salesCode: _itemSalesCode.text,
-                    cashSalesCode: _itemCashSalesCode.text,
-                    salesReturnCode: _itemSalesReturnCode.text,
-                    purchaseCode: _itemPurchaseCode.text,
-                    cashPurchaseCode: _itemCashPurchaseCode.text,
-                    purchaseReturnCode: _itemPurchaseReturnCode.text,
+                    itemCode: itemCodeController.text,
+                    itemDescription: itemDescriptionController.text,
+                    salesCode: itemSalesCode.text,
+                    cashSalesCode: itemCashSalesCode.text,
+                    salesReturnCode: itemSalesReturnCode.text,
+                    purchaseCode: itemPurchaseCode.text,
+                    cashPurchaseCode: itemCashPurchaseCode.text,
+                    purchaseReturnCode: itemPurchaseReturnCode.text,
                   );
                   await _groupItemController.createGroupItem(newItem);
                   if(mounted)
@@ -409,14 +409,11 @@ class _GroupItemPageState extends State<GroupItemPage> {
         final excel = Excel.decodeBytes(bytes);
         final sheet = excel.tables.values.first;
 
-        if(sheet != null)
+        for(final row in sheet.rows)
         {
-          for(final row in sheet.rows)
-          {
-            parsedRows.add(row.map((cell) => cell?.value).toList());
-          }
-        }        
-      }
+          parsedRows.add(row.map((cell) => cell?.value).toList());
+        }
+            }
       else
       {
         throw Exception("Unsupported File Type.");
@@ -429,7 +426,7 @@ class _GroupItemPageState extends State<GroupItemPage> {
         final row = parsedRows[i];        
 
         try {
-          final newItem = new GroupItemModel(
+          final newItem = GroupItemModel(
             itemCode: parsedRows[headers[0]!].toString(), 
             itemDescription: parsedRows[headers[2]!].toString(),
             salesCode: parsedRows[headers[4]!].toString(),
@@ -448,8 +445,9 @@ class _GroupItemPageState extends State<GroupItemPage> {
       }
 
     } catch (e) {
-      if(!mounted)
+      if(!mounted) {
         return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
     }
   }
