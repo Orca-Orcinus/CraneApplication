@@ -62,4 +62,24 @@ class GroupItemController{
       rethrow;
     }
   }
+
+  Future<List<String>> fetchAllGroupItemNames() async
+  {
+    try{
+      final snapshot = await _firestore.streamCollection(groupCollection)?.first;
+      if(snapshot != null)
+      {
+        List<String> groupItems = (snapshot['docs'] as List)
+            .map((doc) => doc['itemDescription'] as String)
+            .toList();
+        return groupItems;
+      }
+      return [];
+    }
+    catch(e)
+    {
+      print('Error fetching group items: $e');
+      rethrow;
+    }
+  }
 }

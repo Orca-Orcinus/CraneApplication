@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:craneapplication/Model/StockManagementModel/StockItemModel.dart';
+import 'package:craneapplication/Model/WarehouseTool/GroupItem.dart';
 import 'package:craneapplication/Model/WarehouseTool/StockItem.dart';
 import 'package:craneapplication/components/MyDrawer.dart';
 import 'package:csv/csv.dart';
@@ -18,6 +19,7 @@ class StockDataPage extends StatefulWidget {
 
 class _StockDataState extends State<StockDataPage> {
   final StockItemController _stockItemController = StockItemController();
+  final GroupItemController _groupItemController = GroupItemController();
 
   String _selectedFilter = 'all'; // all, in_stock, out_of_stock
   String _searchQuery = ''; //itemGroup search query
@@ -85,83 +87,124 @@ class _StockDataState extends State<StockDataPage> {
   void _showEditDialog(BuildContext context,StockItemModel item)
   {
     final descriptionController = TextEditingController(text: item.itemDescription);
-    final itemGroupController = TextEditingController(text: item.itemGroup);
     final uomController = TextEditingController(text: item.unitOfMeasurement);
     final purchaseCostController = TextEditingController(text: item.purchaseCost.toString());
     final salesPriceController = TextEditingController(text: item.salesPrice.toString());
+    
+    String? selectedItemGroup;
 
     showDialog(
       context: context,
       builder: (BuildContext context)
       {
-        return AlertDialog(
-          title: const Text("Edit Stock Item"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(labelText: "Item Description"),
+        return FutureBuilder<List<String>>(
+          future: fetchItemGroups(), 
+          builder: (context,snapshot)
+          {
+            if(snapshot.connectionState == ConnectionState.waiting)
+            {
+              return const AlertDialog(content: SizedBox(height: 100,child: Center(child: CircularProgressIndicator()),),);
+            }
+            if(snapshot.hasError)
+            {
+              return AlertDialog(
+                content: Text("Failed to load item groups"),
+                actions: [
+                  TextButton(onPressed: ()=> Navigator.pop(context),child: const Text("Close"),)
+                ],
+              );
+            }
+
+            final itemGroups = snapshot.data!;
+
+            return StatefulBuilder(builder: (context,setDialogState)
+            {
+              return AlertDialog(
+                title: const Text("Edit Stock Item"),
+                content: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(labelText: "Item Description"),
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: selectedItemGroup,
+                        decoration: const InputDecoration(labelText: "Item Group"),
+                        items:itemGroups.
+                          map(
+                            (group) => DropdownMenuItem(
+                              child: Text(group),
+                              value:group),
+                              ).toList(),
+                            onChanged: (value) {
+                              setDialogState(()=> selectedItemGroup = value);
+                            },
+                        ),        
+                      TextField(
+                        controller: uomController,
+                        decoration: const InputDecoration(labelText: "Unit of Measurement"),
+                      ),
+                      TextField(
+                        controller: purchaseCostController,
+                        decoration: const InputDecoration(labelText: "Purchase Cost"),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: salesPriceController,
+                        decoration: const InputDecoration(labelText: "Sales Price"),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+                  ),
                 ),
-                TextField(
-                  controller: itemGroupController,
-                  decoration: const InputDecoration(labelText: "Item Group"),
-                ),
-                TextField(
-                  controller: uomController,
-                  decoration: const InputDecoration(labelText: "Unit of Measurement"),
-                ),
-                TextField(
-                  controller: purchaseCostController,
-                  decoration: const InputDecoration(labelText: "Purchase Cost"),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: salesPriceController,
-                  decoration: const InputDecoration(labelText: "Sales Price"),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try{
-                  final updatedItem = StockItemModel(
-                    itemCode: item.itemCode,
-                    itemDescription: descriptionController.text,
-                    itemGroup: itemGroupController.text,
-                    unitOfMeasurement: uomController.text,
-                    purchaseCost: double.tryParse(purchaseCostController.text) ?? 0.0,
-                    salesPrice: double.tryParse(salesPriceController.text) ?? 0.0,
-                  );
-                  await _stockItemController.updateStockItem(updatedItem);
-                  if(mounted)
-                  {
-                    Navigator.of(context).pop();
-                    setState(() {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Stock item updated successfully")),
-                      );
-                    });
-                  }
-                }
-                catch (e)
-                {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error updating stock item: $e")),
-                  );
-                }            
-              },
-              child: const Text("Save"),
-            ),
-          ],
-        );
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text("Cancel"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if(selectedItemGroup == null)
+                      {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select an item group")));
+                        return;
+                      }
+
+                      try{
+                        final updatedItem = StockItemModel(
+                          itemCode: item.itemCode,
+                          itemDescription: descriptionController.text,
+                          itemGroup: selectedItemGroup!,
+                          unitOfMeasurement: uomController.text,
+                          purchaseCost: double.tryParse(purchaseCostController.text) ?? 0.0,
+                          salesPrice: double.tryParse(salesPriceController.text) ?? 0.0,
+                        );
+                        await _stockItemController.updateStockItem(updatedItem);
+                        if(mounted)
+                        {
+                          Navigator.of(context).pop();
+                          setState(() {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Stock item updated successfully")),
+                            );
+                          });
+                        }
+                      }
+                      catch (e)
+                      {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error updating stock item: $e")),
+                        );
+                      }            
+                    },
+                    child: const Text("Save"),
+                  ),
+                ],
+              );
+            });
+          }
+        );     
       },
     );
   }
@@ -330,89 +373,137 @@ class _StockDataState extends State<StockDataPage> {
     );
   }
 
+  Future<List<String>> fetchItemGroups() async 
+  {
+    final snapshot = await _groupItemController.fetchAllGroupItemNames();
+
+    return snapshot;
+  }
+
   void _showAddItemDialog(BuildContext context) {
     final itemCodeController = TextEditingController();
     final itemDescriptionController = TextEditingController();
-    final itemGroupController = TextEditingController();
     final uomController = TextEditingController();
     final purchaseCostController = TextEditingController();
     final salesPriceController = TextEditingController();
 
+    String? selectedItemGroup;
+
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text("Add Stock Item"),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: itemCodeController,
-                  decoration: const InputDecoration(labelText: "Item Code"),
-                ),
-                TextField(
-                  controller: itemDescriptionController,
-                  decoration: const InputDecoration(labelText: "Item Description"),
-                ),
-                TextField(
-                  controller: itemGroupController,
-                  decoration: const InputDecoration(labelText: "Item Group"),
-                ),
-                TextField(
-                  controller: uomController,
-                  decoration: const InputDecoration(labelText: "Unit of Measurement"),
-                ),
-                TextField(
-                  controller: purchaseCostController,
-                  decoration: const InputDecoration(labelText: "Purchase Cost"),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: salesPriceController,
-                  decoration: const InputDecoration(labelText: "Sales Price"),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try{
-                  final newItem = StockItemModel(
-                    itemCode: itemCodeController.text,
-                    itemDescription: itemDescriptionController.text,
-                    itemGroup: itemGroupController.text,
-                    unitOfMeasurement: uomController.text,
-                    purchaseCost: double.tryParse(purchaseCostController.text) ?? 0.0,
-                    salesPrice: double.tryParse(salesPriceController.text) ?? 0.0,
-                  );
-                  await _stockItemController.createStockItem(newItem);
-                  if(mounted)
-                  {
-                    Navigator.of(context).pop();
-                    setState(() {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Stock item added successfully")),
-                      );
-                    });
-                  }
-                }
-                catch (e)
-                {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error adding stock item: $e")),
-                  );
-                }            
-              },
-              child: const Text("Add"),
-            ),
-          ],
-        );
+        return FutureBuilder<List<String>>(
+          future: fetchItemGroups(), 
+          builder: (context,snapshot)
+          {
+            if(snapshot.connectionState == ConnectionState.waiting){
+              return const AlertDialog(content:SizedBox(height: 100, child: Center(child:CircularProgressIndicator())));
+            }
+
+            if(snapshot.hasError)
+            {
+              return AlertDialog(
+                content: Text("Failed to load item groups"),
+                actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("Close"))],
+                );
+            }
+
+            final itemGroups = snapshot.data!;
+
+            return StatefulBuilder(
+              builder: (context,setDialogState){
+                return AlertDialog(
+                  title: const Text("Add Stock Item"),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: itemCodeController,
+                          decoration: const InputDecoration(labelText: "Item Code"),
+                        ),
+                        TextField(
+                          controller: itemDescriptionController,
+                          decoration: const InputDecoration(labelText: "Item Description"),
+                        ),
+                        DropdownButtonFormField<String>(
+                          value: selectedItemGroup,
+                          decoration: const InputDecoration(labelText: "Item Group"),
+                          items: itemGroups
+                            .map(
+                              (group) => DropdownMenuItem(
+                                value: group,
+                                child: Text(group),
+                              ),
+                            )
+                            .toList(),
+                            onChanged: (value){
+                              setDialogState((){
+                                selectedItemGroup = value;
+                              });
+                            },
+                        ),
+                        TextField(
+                          controller: uomController,
+                          decoration: const InputDecoration(labelText: "Unit of Measurement"),
+                        ),
+                        TextField(
+                          controller: purchaseCostController,
+                          decoration: const InputDecoration(labelText: "Purchase Cost"),
+                          keyboardType: TextInputType.number,
+                        ),
+                        TextField(
+                          controller: salesPriceController,
+                          decoration: const InputDecoration(labelText: "Sales Price"),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        if(selectedItemGroup == null)
+                        {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select an item group.")));
+                          return;
+                        }
+                        try{
+                          final newItem = StockItemModel(
+                            itemCode: itemCodeController.text,
+                            itemDescription: itemDescriptionController.text,
+                            itemGroup: selectedItemGroup!,
+                            unitOfMeasurement: uomController.text,
+                            purchaseCost: double.tryParse(purchaseCostController.text) ?? 0.0,
+                            salesPrice: double.tryParse(salesPriceController.text) ?? 0.0,
+                          );
+                          await _stockItemController.createStockItem(newItem);
+                          if(mounted)
+                          {
+                            Navigator.of(context).pop();
+                            setState(() {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Stock item added successfully")),
+                              );
+                            });
+                          }
+                        }
+                        catch (e)
+                        {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Error adding stock item: $e")),
+                          );
+                        }            
+                      },
+                      child: const Text("Add"),
+                    ),
+                  ],
+                );
+              });
+          });
       },
     );
   }

@@ -421,28 +421,64 @@ class _GroupItemPageState extends State<GroupItemPage> {
 
       final headers = _buildHeaderIndex(parsedRows.first);
 
-      for(int i = 1; i < parsedRows.length;i++)
-      {
-        final row = parsedRows[i];        
+      String? currentItemCode;
+      String currentItemDescription = "";
 
-        try {
-          final newItem = GroupItemModel(
-            itemCode: parsedRows[headers[0]!].toString(), 
-            itemDescription: parsedRows[headers[2]!].toString(),
-            salesCode: parsedRows[headers[4]!].toString(),
-            salesReturnCode: parsedRows[headers[5]!].toString(),
-            cashSalesCode: parsedRows[headers[7]!].toString(), 
-            purchaseCode: parsedRows[headers[8]!].toString(),
-            purchaseReturnCode: parsedRows[headers[10]!].toString(), 
-            cashPurchaseCode: parsedRows[headers[11]!].toString(),
+      for (int i = 1; i < parsedRows.length; i++) {
+        final row = parsedRows[i];
+
+        final itemCode = row[headers[0]!]?.toString().trim();
+        final description = row[headers[2]!]?.toString().trim() ?? "";
+
+        // If this row has an item code, commit previous item and start new
+        if (itemCode != null && itemCode.isNotEmpty) {
+
+          // Save previous item before starting new one
+          if (currentItemCode != null) {
+            final newItem = GroupItemModel(
+              itemCode: currentItemCode,
+              itemDescription: currentItemDescription,
+              salesCode: row[headers[4]!].toString(),
+              salesReturnCode: row[headers[5]!].toString(),
+              cashSalesCode: row[headers[7]!].toString(),
+              purchaseCode: row[headers[8]!].toString(),
+              purchaseReturnCode: row[headers[10]!].toString(),
+              cashPurchaseCode: row[headers[11]!].toString(),
             );
 
             await _groupItemController.createGroupItem(newItem);
-        } catch (e) {
-          if(!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed for $e")));
+          }
+
+          // Start new item
+          currentItemCode = itemCode;
+          currentItemDescription = description;
+
+        } else {
+          // No item code → append description to previous item
+          if (description.isNotEmpty && currentItemCode != null) {
+            currentItemDescription += " $description";
+          }
         }
       }
+
+      // Save the last item after loop ends
+      if (currentItemCode != null) {
+        final lastRow = parsedRows.last;
+
+        final newItem = GroupItemModel(
+          itemCode: currentItemCode,
+          itemDescription: currentItemDescription,
+          salesCode: lastRow[headers[4]!].toString(),
+          salesReturnCode: lastRow[headers[5]!].toString(),
+          cashSalesCode: lastRow[headers[7]!].toString(),
+          purchaseCode: lastRow[headers[8]!].toString(),
+          purchaseReturnCode: lastRow[headers[10]!].toString(),
+          cashPurchaseCode: lastRow[headers[11]!].toString(),
+        );
+
+        await _groupItemController.createGroupItem(newItem);
+      }
+
 
     } catch (e) {
       if(!mounted) {

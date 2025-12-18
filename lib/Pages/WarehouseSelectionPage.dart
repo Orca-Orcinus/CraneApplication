@@ -3,6 +3,7 @@ import 'package:craneapplication/Pages/LoginPage.dart';
 import 'package:craneapplication/Pages/StockDataPage.dart';
 import 'package:craneapplication/Pages/StockReceivedItemPage.dart';
 import 'package:craneapplication/Pages/StockTransferItemPage.dart';
+import 'package:craneapplication/Pages/StockWarehousePage.dart';
 import 'package:craneapplication/components/MyButton.dart';
 import 'package:craneapplication/components/MyDrawer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -49,6 +50,10 @@ class _WarehouseSelectionPageState extends State<WarehouseSelectionPage> {
                 const SizedBox(height: 10),
 
                 MyButton(btnName: "Group Item", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const GroupItemPage()))),
+
+                const SizedBox(height: 10),
+
+                MyButton(btnName: "Stock Warehouse", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const StockWarehousePage()))),
 
                 const SizedBox(height: 10),
               ]),
