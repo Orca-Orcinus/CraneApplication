@@ -6,6 +6,7 @@ class SupplierProfile{
   String supplierName;
   String? supplierEmail;
   String? supplierPhoneNumber;
+  String? supplierAddress;
 
   DateTime? createdAt;
   DateTime? updatedAt;
@@ -17,6 +18,7 @@ class SupplierProfile{
     required this.supplierName,
     this.supplierEmail,
     this.supplierPhoneNumber,
+    this.supplierAddress,
     this.createdAt,
     this.updatedAt,
     required this.createdBy,
@@ -29,6 +31,7 @@ class SupplierProfile{
       'supplierName': supplierName,
       'supplierEmail': supplierEmail,
       'supplierPhoneNumber': supplierPhoneNumber,
+      'supplierAddress':supplierAddress,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'createdBy': createdBy,
@@ -42,6 +45,7 @@ class SupplierProfile{
       supplierName: json['supplierName'],
       supplierEmail: json['supplierEmail'],
       supplierPhoneNumber: json['supplierPhoneNumber'],
+      supplierAddress: json['supplierAddress'],
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
       createdBy: json['createdBy'],

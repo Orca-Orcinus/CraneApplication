@@ -413,22 +413,22 @@ class _GroupItemPageState extends State<GroupItemPage> {
         {
           parsedRows.add(row.map((cell) => cell?.value).toList());
         }
-            }
+      }
       else
       {
         throw Exception("Unsupported File Type.");
       }
 
-      final headers = _buildHeaderIndex(parsedRows.first);
+      final headers = _buildHeaderIndex(parsedRows[1]);
 
       String? currentItemCode;
       String currentItemDescription = "";
 
-      for (int i = 1; i < parsedRows.length; i++) {
+      for (int i = 2; i < parsedRows.length; i++) {
         final row = parsedRows[i];
 
-        final itemCode = row[headers[0]!]?.toString().trim();
-        final description = row[headers[2]!]?.toString().trim() ?? "";
+        final itemCode = row[headers["Code"]!]?.toString().trim();
+        final description = row[headers["Description"]!]?.toString().trim() ?? "";
 
         // If this row has an item code, commit previous item and start new
         if (itemCode != null && itemCode.isNotEmpty) {
@@ -438,12 +438,12 @@ class _GroupItemPageState extends State<GroupItemPage> {
             final newItem = GroupItemModel(
               itemCode: currentItemCode,
               itemDescription: currentItemDescription,
-              salesCode: row[headers[4]!].toString(),
-              salesReturnCode: row[headers[5]!].toString(),
-              cashSalesCode: row[headers[7]!].toString(),
-              purchaseCode: row[headers[8]!].toString(),
-              purchaseReturnCode: row[headers[10]!].toString(),
-              cashPurchaseCode: row[headers[11]!].toString(),
+              salesCode: row[headers["Sales"]!].toString(),
+              salesReturnCode: row[headers["S/Return"]!].toString(),
+              cashSalesCode: row[headers["Cash Sales"]!].toString(),
+              purchaseCode: row[headers["Purchase"]!].toString(),
+              purchaseReturnCode: row[headers["P/Return"]!].toString(),
+              cashPurchaseCode: row[headers["C/Purchase"]!].toString(),
             );
 
             await _groupItemController.createGroupItem(newItem);
@@ -468,12 +468,12 @@ class _GroupItemPageState extends State<GroupItemPage> {
         final newItem = GroupItemModel(
           itemCode: currentItemCode,
           itemDescription: currentItemDescription,
-          salesCode: lastRow[headers[4]!].toString(),
-          salesReturnCode: lastRow[headers[5]!].toString(),
-          cashSalesCode: lastRow[headers[7]!].toString(),
-          purchaseCode: lastRow[headers[8]!].toString(),
-          purchaseReturnCode: lastRow[headers[10]!].toString(),
-          cashPurchaseCode: lastRow[headers[11]!].toString(),
+          salesCode: lastRow[headers["Sales"]!].toString(),
+          salesReturnCode: lastRow[headers["S/Return"]!].toString(),
+          cashSalesCode: lastRow[headers["Cash Sales"]!].toString(),
+          purchaseCode: lastRow[headers["Purchase"]!].toString(),
+          purchaseReturnCode: lastRow[headers["P/Return"]!].toString(),
+          cashPurchaseCode: lastRow[headers["C/Purchase"]!].toString(),
         );
 
         await _groupItemController.createGroupItem(newItem);

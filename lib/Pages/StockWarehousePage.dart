@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:craneapplication/Model/StockManagementModel/StockKeepingModel.dart';
 import 'package:craneapplication/Model/WarehouseTool/StockKeepingItem.dart';
 import 'package:csv/csv.dart';
@@ -81,94 +82,17 @@ class _StockWarehouseState extends State<StockWarehousePage> {
     );
   }
 
-  Future<void> _importFromFile(BuildContext context) async
-  {
-      try {
-        final result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['csv','xlsx'],
-          withData: true,
-        );
-
-        if(result == null) return; //user termination
-
-        final file = result.files.single;
-        final extension = file.extension?.toLowerCase();
-        final bytes = file.bytes ?? await File(file.path!).readAsBytes();
-
-        List<List<dynamic>> parsedRows = [];
-
-        if(extension == "csv")
-        {
-          final csvString = String.fromCharCodes(bytes);
-
-          parsedRows = const CsvToListConverter(eol: "\n",shouldParseNumbers: false,).convert(csvString);
-        }
-        else if(extension == "xlsx")
-        {
-          final excel = Excel.decodeBytes(bytes);
-          final sheet = excel.tables.values.first;
-
-          for(final row in sheet.rows)
-          {
-            parsedRows.add(row.map((cell) => cell?.value).toList());
-          }
-                }
-        else
-        {
-          throw Exception("Unsupported File Type.");
-        }
-
-        final headers = _buildHeaderIndex(parsedRows.first);
-
-        for(int i = 1; i < parsedRows.length;i++)
-        {
-          final row = parsedRows[i];        
-
-          try {
-            final newItem = StockKeepingModel(
-              itemCode: parsedRows[headers[0]!].toString(), 
-              itemDescription: parsedRows[headers[2]!].toString(),
-              fromLocation: parsedRows[headers[3]!].toString(),
-              toLocation: parsedRows[headers[4]!].toString(),
-              unitOfMeasurement: parsedRows[headers[5]!].toString(),
-              quantityTransferred: double.tryParse([headers[6]!].toString()) ?? 0.0,
-              );
-
-              await _stockKeepingController.addStockTransfer(newItem);
-          } catch (e) {
-            if(!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed for $e")));
-          }
-        }
-
-      } catch (e) {
-        if(!mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
-      }
-    }
-
-    Map<String, int> _buildHeaderIndex(List<dynamic> headerRow) {
-    final Map<String, int> indexMap = {};
-
-    for (int i = 0; i < headerRow.length; i++) {
-      final key = headerRow[i].toString().trim();
-      indexMap[key] = i;
-    }
-
-    return indexMap;
-  }
-
-
   void _showEditDialog(BuildContext context,StockKeepingModel item)
   {
     final itemDescriptionControlller = TextEditingController(text: item.itemDescription);
-    final fromLocationController = TextEditingController(text: item.fromLocation);
-    final toLocationController = TextEditingController(text: item.toLocation);
+    final itemSku = TextEditingController(text: item.sku);
+    final itemCategory = TextEditingController(text: item.category);
+    final itemUnitCost = TextEditingController(text: item.unitCost.toString());
+    final itemQuantity = TextEditingController(text: item.quantity.toString());
+    final itemMinStockLevel = TextEditingController(text: item.minStockLevel.toString());
+    final itemMaxStockLevel = TextEditingController(text: item.maxStockLevel.toString());
     final uomController = TextEditingController(text: item.unitOfMeasurement);
-    final quantityTransferredController = TextEditingController(text: item.quantityTransferred.toString());
+    final createdBy = TextEditingController(text: item.createdBy);
 
     showDialog(
       context: context,
@@ -184,21 +108,40 @@ class _StockWarehouseState extends State<StockWarehousePage> {
                   decoration: const InputDecoration(labelText: "Item Description"),
                 ),
                 TextField(
-                  controller: fromLocationController,
-                  decoration: const InputDecoration(labelText: "From Location"),                  
+                  controller: itemSku,
+                  decoration: const InputDecoration(labelText: "Item Sku"),                  
                 ),
                 TextField(
-                  controller: toLocationController,
-                  decoration: const InputDecoration(labelText: "To Location"),
+                  controller: itemCategory,
+                  decoration: const InputDecoration(labelText: "Item Category"),
+                ),
+                TextField(
+                  controller: itemUnitCost,
+                  decoration: const InputDecoration(labelText: "Item Unit Cost"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: itemQuantity,
+                  decoration: const InputDecoration(labelText: "Item Quantity"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: itemMinStockLevel,
+                  decoration: const InputDecoration(labelText: "Item Min Stock Level"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: itemMaxStockLevel,
+                  decoration: const InputDecoration(labelText: "Item Max Stock Level"),
+                  keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: uomController,
                   decoration: const InputDecoration(labelText: "Unit of Measurement"),
                 ),
                 TextField(
-                  controller: quantityTransferredController,
-                  decoration: const InputDecoration(labelText: "Quantity Transferred"),
-                  keyboardType: TextInputType.number,
+                  controller: createdBy,
+                  decoration: const InputDecoration(labelText: "Created By"),
                 ),
               ],
             ),
@@ -214,12 +157,16 @@ class _StockWarehouseState extends State<StockWarehousePage> {
                   final updatedItem = StockKeepingModel(
                     itemCode: item.itemCode,
                     itemDescription: itemDescriptionControlller.text,
-                    fromLocation: fromLocationController.text,
-                    toLocation: toLocationController.text,
-                    quantityTransferred: double.tryParse(quantityTransferredController.text) ?? 0.0,
+                    category: itemCategory.text,
+                    unitCost: double.tryParse(itemUnitCost.text) ?? 0.0,
+                    minStockLevel: int.tryParse(itemMinStockLevel.text) ?? 0,
+                    maxStockLevel: int.tryParse(itemMaxStockLevel.text) ?? 0,
+                    quantity: double.tryParse(itemQuantity.text) ?? 0.0,
+                    sku:itemSku.text,
                     unitOfMeasurement: uomController.text,
+                    createdBy: item.createdBy,
                   );
-                  await _stockKeepingController.updateStockTransfer(updatedItem);
+                  await _stockKeepingController.updateStockKeeping(updatedItem);
                   if(mounted)
                   {
                     Navigator.of(context).pop();
@@ -257,10 +204,14 @@ class _StockWarehouseState extends State<StockWarehousePage> {
               children: [
                 _buildDetailRow("Item Code", item.itemCode),
                 _buildDetailRow("Description", item.itemDescription), 
-                _buildDetailRow("From Location", item.fromLocation),
-                _buildDetailRow("To Location", item.toLocation), 
+                _buildDetailRow("sku", item.sku),
+                _buildDetailRow("Item Category", item.category), 
+                _buildDetailRow("Unit Cost", item.unitCost.toStringAsFixed(2)),
+                _buildDetailRow("Min Stock Level", item.minStockLevel.toStringAsFixed(1)),
+                _buildDetailRow("Max Stock Level", item.maxStockLevel.toStringAsFixed(1)),
+                _buildDetailRow("Quantity Count", item.quantity.toStringAsFixed(1)),
                 _buildDetailRow("Unit of Measurement", item.unitOfMeasurement),
-                _buildDetailRow("Quantity Transffered", item.quantityTransferred.toStringAsFixed(2)),
+                _buildDetailRow("Created By", item.createdBy),
               ],
             ),
           ),
@@ -293,7 +244,7 @@ class _StockWarehouseState extends State<StockWarehousePage> {
                 if(confirm == true)
                 {
                   try{
-                    await _stockKeepingController.deleteStockTransfer(item);
+                    await _stockKeepingController.deleteStockKeeping(item);
                     if(mounted)
                     {
                       Navigator.of(context).pop(); // Close details dialog
@@ -331,11 +282,15 @@ class _StockWarehouseState extends State<StockWarehousePage> {
 
   void _showAddItemDialog(BuildContext context) {
     final itemCodeController = TextEditingController();
-    final itemDescriptionController = TextEditingController();
-    final fromLocationController = TextEditingController();
-    final toLocationController = TextEditingController();
-    final quantityController = TextEditingController();
+    final itemDescriptionControlller = TextEditingController();
+    final itemSku = TextEditingController();
+    final itemCategory = TextEditingController();
+    final itemUnitCost = TextEditingController();
+    final itemQuantity = TextEditingController();
     final uomController = TextEditingController();
+    final itemMinStockLevel = TextEditingController();
+    final itemMaxStockLevel = TextEditingController();
+    final createdBy = TextEditingController();
 
     showDialog(
       context: context,
@@ -350,25 +305,44 @@ class _StockWarehouseState extends State<StockWarehousePage> {
                   decoration: const InputDecoration(labelText: "Item Code"),
                 ),
                 TextField(
-                  controller: itemDescriptionController,
+                  controller: itemDescriptionControlller,
                   decoration: const InputDecoration(labelText: "Item Description"),
                 ),
                 TextField(
-                  controller: fromLocationController,
-                  decoration: const InputDecoration(labelText: "From Location"),                  
+                  controller: itemSku,
+                  decoration: const InputDecoration(labelText: "Item Sku"),                  
                 ),
                 TextField(
-                  controller: toLocationController,
-                  decoration: const InputDecoration(labelText: "To Location"),
+                  controller: itemCategory,
+                  decoration: const InputDecoration(labelText: "Item Category"),
+                ),
+                TextField(
+                  controller: itemUnitCost,
+                  decoration: const InputDecoration(labelText: "Item Unit Cost"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: itemQuantity,
+                  decoration: const InputDecoration(labelText: "Item Quantity"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: itemMinStockLevel,
+                  decoration: const InputDecoration(labelText: "Item Min Stock Level"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: itemMaxStockLevel,
+                  decoration: const InputDecoration(labelText: "Item Max Stock Level"),
+                  keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: uomController,
                   decoration: const InputDecoration(labelText: "Unit of Measurement"),
                 ),
                 TextField(
-                  controller: quantityController,
-                  decoration: const InputDecoration(labelText: "Quantity Transferred"),
-                  keyboardType: TextInputType.number,
+                  controller: createdBy,
+                  decoration: const InputDecoration(labelText: "Created By"),
                 ),
               ],
             ),
@@ -383,13 +357,17 @@ class _StockWarehouseState extends State<StockWarehousePage> {
                 try{
                   final newItem = StockKeepingModel(
                     itemCode: itemCodeController.text,
-                    itemDescription: itemDescriptionController.text,
-                    fromLocation: fromLocationController.text,
-                    toLocation: toLocationController.text,
+                    itemDescription: itemDescriptionControlller.text,
+                    category: itemCategory.text,
+                    unitCost: double.tryParse(itemUnitCost.text) ?? 0.0,
+                    minStockLevel: int.tryParse(itemMinStockLevel.text) ?? 0,
+                    maxStockLevel: int.tryParse(itemMaxStockLevel.text) ?? 0,
+                    quantity: double.tryParse(itemQuantity.text) ?? 0.0,
+                    sku:itemSku.text,
                     unitOfMeasurement: uomController.text,
-                    quantityTransferred: double.tryParse(quantityController.text) ?? 0.0,
+                    createdBy: createdBy.text,
                   );
-                  await _stockKeepingController.addStockTransfer(newItem);
+                  await _stockKeepingController.addStockKeeping(newItem);
                   if(mounted)
                   {
                     Navigator.of(context).pop();
@@ -409,11 +387,148 @@ class _StockWarehouseState extends State<StockWarehousePage> {
               },
               child: const Text("Add"),
             ),
+            ElevatedButton(onPressed: () async
+            {
+              _importFromFile(context);
+            },
+            child: const Text("Import Data"))
           ],
         );
       },
     );
   }
+
+  Future<void> _importFromFile(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv','xlsx'],
+        withData: true,
+      );
+
+      if(result == null) return; //user termination
+
+      final file = result.files.single;
+      final extension = file.extension?.toLowerCase();
+      final bytes = file.bytes ?? await File(file.path!).readAsBytes();
+
+      List<List<dynamic>> parsedRows = [];
+
+      if(extension == "csv")
+      {
+        final csvString = String.fromCharCodes(bytes);
+
+        parsedRows = const CsvToListConverter(eol: "\n",shouldParseNumbers: false,).convert(csvString);
+      }
+      else if(extension == "xlsx")
+      {
+        final excel = Excel.decodeBytes(bytes);
+        final sheet = excel.tables.values.first;
+
+        for(final row in sheet.rows)
+        {
+          parsedRows.add(row.map((cell) => cell?.value).toList());
+        }
+      }
+      else
+      {
+        throw Exception("Unsupported File Type.");
+      }
+
+      final headers = _buildHeaderIndex(parsedRows[0]);
+
+      String? currentItemCode;
+      String currentItemDescription = "";
+
+      for (int i = 2; i < parsedRows.length; i++) {
+        final row = parsedRows[i];
+
+        final itemCode = row[headers["Item Code"]!]?.toString().trim();
+        final description = row[headers["Description"]!]?.toString().trim() ?? "";
+
+        // If this row has an item code, commit previous item and start new
+        if (itemCode != null && itemCode.isNotEmpty) {
+
+          // Save previous item before starting new one
+          if (currentItemCode != null) {
+            final priceCell = row[headers["Price"]!];
+            final qtyCell = row[headers["QTY"]!];
+            final newItem = StockKeepingModel(
+              itemCode: currentItemCode,
+              itemDescription: currentItemDescription, 
+              sku: '',
+              category: '', 
+              unitCost: _toDouble(priceCell),
+              quantity: _toDouble(qtyCell), 
+              minStockLevel: 0, 
+              maxStockLevel: 0, 
+              unitOfMeasurement: row[headers["UOM"]!]?.toString() ?? '', 
+              createdBy: '',
+            );
+
+            await _stockKeepingController.addStockKeeping(newItem);
+          }
+
+          // Start new item
+          currentItemCode = itemCode;
+          currentItemDescription = description;
+
+        } else {
+          // No item code → append description to previous item
+          if (description.isNotEmpty && currentItemCode != null) {
+            currentItemDescription += " $description";
+          }
+        }
+      }
+
+      // Save the last item after loop ends
+      if (currentItemCode != null) {
+        final lastRow = parsedRows.last;
+        final priceCell = parsedRows[headers["Price"]!];
+        final qtyCell = parsedRows[headers["QTY"]!];
+        final newItem = StockKeepingModel(
+          itemCode: currentItemCode,
+          itemDescription: currentItemDescription,
+          sku: '',
+          category: '', 
+          unitCost: _toDouble(priceCell),
+          quantity: _toDouble(qtyCell),
+          minStockLevel: 0, 
+          maxStockLevel: 0, 
+          unitOfMeasurement: lastRow[headers["UOM"]!]?.toString() ?? '', 
+          createdBy: '',
+        );
+
+        await _stockKeepingController.addStockKeeping(newItem);
+      }
+
+
+    } catch (e) {
+      if(!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to import CSV:$e")));
+      print(e);
+    }
+  }
+
+  double _toDouble(dynamic cell) {
+    if (cell == null) return 0.0;
+    if (cell is num) return cell.toDouble();
+    return double.tryParse(cell.toString()) ?? 0.0;
+  }
+
+  
+  Map<String, int> _buildHeaderIndex(List<dynamic> headerRow) {
+  final Map<String, int> indexMap = {};
+
+  for (int i = 0; i < headerRow.length; i++) {
+    final key = headerRow[i].toString().trim();
+    indexMap[key] = i;
+  }
+
+  return indexMap;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -503,19 +618,27 @@ class _StockWarehouseState extends State<StockWarehousePage> {
                                 columns: const [
                                   DataColumn(label: Text('Item Code',style:TextStyle(fontWeight:FontWeight.bold))),
                                   DataColumn(label: Text('Description',style:TextStyle(fontWeight:FontWeight.bold))),
-                                  DataColumn(label: Text('From Location',style:TextStyle(fontWeight:FontWeight.bold))),
-                                  DataColumn(label: Text('To Location',style:TextStyle(fontWeight:FontWeight.bold))),
+                                  DataColumn(label: Text('Sku',style:TextStyle(fontWeight:FontWeight.bold))),
+                                  DataColumn(label: Text('Category',style:TextStyle(fontWeight:FontWeight.bold))),
+                                  DataColumn(label: Text('Unit Cost',style:TextStyle(fontWeight:FontWeight.bold))),
+                                  DataColumn(label: Text('Min Stock Level',style:TextStyle(fontWeight:FontWeight.bold))),
+                                  DataColumn(label: Text('Max Stock Level',style:TextStyle(fontWeight:FontWeight.bold))),
                                   DataColumn(label: Text('UOM',style:TextStyle(fontWeight:FontWeight.bold))),
-                                  DataColumn(label: Text('Quantity Transferred',style:TextStyle(fontWeight:FontWeight.bold))),
+                                  DataColumn(label: Text('Quantity',style:TextStyle(fontWeight:FontWeight.bold))),
+                                  DataColumn(label: Text('Created By',style:TextStyle(fontWeight:FontWeight.bold))),
                                 ],
                                 rows: stockItems.map((item) {
                                   return DataRow(cells: [
                                     DataCell(Text(item.itemCode)),
                                     DataCell(Text(item.itemDescription)),
-                                    DataCell(Text(item.fromLocation)),
-                                    DataCell(Text(item.toLocation)),
+                                    DataCell(Text(item.sku)),
+                                    DataCell(Text(item.category)),
+                                    DataCell(Text(item.unitCost.toStringAsFixed(2))),
+                                    DataCell(Text(item.minStockLevel.toStringAsFixed(1))),
+                                    DataCell(Text(item.maxStockLevel.toStringAsFixed(1))),
                                     DataCell(Text(item.unitOfMeasurement)),
-                                    DataCell(Text(item.quantityTransferred.toStringAsFixed(2))),
+                                    DataCell(Text(item.quantity.toStringAsFixed(1))),
+                                    DataCell(Text(item.createdBy)),
                                   ],
                                   onSelectChanged: (_)
                                   {

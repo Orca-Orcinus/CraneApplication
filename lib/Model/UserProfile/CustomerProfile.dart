@@ -6,6 +6,7 @@ class CustomerProfile{
   String customerName;
   String? customerEmail;
   String? customerPhoneNumber;
+  String? customerAddress;
 
   DateTime? createdAt;
   DateTime? updatedAt;
@@ -15,6 +16,7 @@ class CustomerProfile{
   CustomerProfile({
     String? customerId,
     required this.customerName,
+    this.customerAddress,
     this.customerEmail,
     this.customerPhoneNumber,
     this.createdAt,
@@ -25,10 +27,11 @@ class CustomerProfile{
 
   Map<String,dynamic> toJson(){
     return {
-      'supplierId': customerId,
-      'supplierName': customerName,
-      'supplierEmail': customerEmail,
-      'supplierPhoneNumber': customerPhoneNumber,
+      'customerId': customerId,
+      'customerName': customerName,
+      'customerEmail': customerEmail,
+      'customerPhoneNumber': customerPhoneNumber,
+      'customerAddress':customerAddress,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'createdBy': createdBy,
@@ -42,6 +45,7 @@ class CustomerProfile{
       customerName: json['customerName'],
       customerEmail: json['customerEmail'],
       customerPhoneNumber: json['customerPhoneNumber'],
+      customerAddress: json['customerAddress'],
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
       createdBy: json['createdBy'],

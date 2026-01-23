@@ -129,13 +129,13 @@ class _StockDataState extends State<StockDataPage> {
                         decoration: const InputDecoration(labelText: "Item Description"),
                       ),
                       DropdownButtonFormField<String>(
-                        value: selectedItemGroup,
+                        initialValue: selectedItemGroup,
                         decoration: const InputDecoration(labelText: "Item Group"),
                         items:itemGroups.
                           map(
                             (group) => DropdownMenuItem(
-                              child: Text(group),
-                              value:group),
+                              value:group,
+                              child: Text(group)),
                               ).toList(),
                             onChanged: (value) {
                               setDialogState(()=> selectedItemGroup = value);
@@ -426,7 +426,7 @@ class _StockDataState extends State<StockDataPage> {
                           decoration: const InputDecoration(labelText: "Item Description"),
                         ),
                         DropdownButtonFormField<String>(
-                          value: selectedItemGroup,
+                          initialValue: selectedItemGroup,
                           decoration: const InputDecoration(labelText: "Item Group"),
                           items: itemGroups
                             .map(

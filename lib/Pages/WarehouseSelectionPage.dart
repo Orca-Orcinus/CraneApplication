@@ -1,3 +1,5 @@
+import 'package:craneapplication/Pages/CustomerInformationPage.dart';
+import 'package:craneapplication/Pages/DeliveryOrderPage.dart';
 import 'package:craneapplication/Pages/GroupItemPage.dart';
 import 'package:craneapplication/Pages/LoginPage.dart';
 import 'package:craneapplication/Pages/StockDataPage.dart';
@@ -37,7 +39,7 @@ class _WarehouseSelectionPageState extends State<WarehouseSelectionPage> {
               child: Column(                           
               mainAxisSize: MainAxisSize.min,
               children: [
-                MyButton(btnName: "Stock Item", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const StockDataPage()))),
+                MyButton(btnName: "Delivery Order", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const DeliveryOrderPage()))),
 
                 const SizedBox(height: 10),
 
@@ -56,6 +58,9 @@ class _WarehouseSelectionPageState extends State<WarehouseSelectionPage> {
                 MyButton(btnName: "Stock Warehouse", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const StockWarehousePage()))),
 
                 const SizedBox(height: 10),
+
+                MyButton(btnName: "Customer", onClick: () => Navigator.pushReplacement(context,MaterialPageRoute(builder: (context) => const CustomerInformationPage()))),
+
               ]),
             );
           }

@@ -5,7 +5,7 @@ class StockKeepingModel{
   String category;
   double unitCost;
 
-  int quantity;
+  double quantity;
   int minStockLevel;
   int maxStockLevel;
   String unitOfMeasurement;
@@ -56,7 +56,7 @@ class StockKeepingModel{
       quantity: json['quantity'], 
       minStockLevel: json['minStockLevel'], 
       maxStockLevel: json['maxStockLevel'], 
-      unitOfMeasurement: json['unitOfMeasurement'],
+      unitOfMeasurement: json['uom'],
       createdBy: json['createdBy']);
   }
 }

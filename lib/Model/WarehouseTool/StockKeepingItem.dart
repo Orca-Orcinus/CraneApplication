@@ -6,7 +6,7 @@ class StockKeepingItem
   final FireStoreService _fireStoreService = FireStoreService();
   static const String collectionName = "warehouse_keeping";
 
-  Future<void> updateStockTransfer(StockKeepingModel stockKeeping) async{
+  Future<void> updateStockKeeping(StockKeepingModel stockKeeping) async{
     try{
       String? docId = await _fireStoreService.getDocumentId(collection: collectionName, primaryKeyField: "itemCode", documentCode: stockKeeping.itemCode);
 
@@ -23,7 +23,7 @@ class StockKeepingItem
     }
   }
 
-  Future<void> addStockTransfer(StockKeepingModel stockKeeping) async{
+  Future<void> addStockKeeping(StockKeepingModel stockKeeping) async{
     try{
       await _fireStoreService.addData(collection: collectionName, data: stockKeeping.toJson());
     }
@@ -34,7 +34,7 @@ class StockKeepingItem
     }
   }
 
-  Future<void> deleteStockTransfer(StockKeepingModel stockKeeping) async{
+  Future<void> deleteStockKeeping(StockKeepingModel stockKeeping) async{
     try{
       String? docId = await _fireStoreService.getDocumentId(collection: collectionName, primaryKeyField: "itemCode", documentCode: stockKeeping.itemCode);
        
