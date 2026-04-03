@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:craneapplication/Model/ApplicationTool/pdfSaver.dart';
 import 'package:craneapplication/Model/DeliveryOrder/DeliveryOrder.dart';
+import 'package:craneapplication/Model/StockManagementModel/StockKeepingModel.dart';
 import 'package:craneapplication/Model/UserProfile/CustomerProfile.dart';
+import 'package:craneapplication/Model/WarehouseTool/StockKeepingItem.dart';
 import 'package:craneapplication/components/MyDrawer.dart';
 import 'package:flutter/material.dart';
 import 'package:craneapplication/Model/DeliveryOrder/DeliveryOrderPdfModel.dart';
@@ -32,12 +34,14 @@ class _DeliveryOrderPageState extends State<DeliveryOrderPage> {
   bool _isLoadingCustomers = true;
   String? _customerLoadError;
   List<DeliveryOrderItems> _items = [];
+  List<StockKeepingModel> warehouseItems = [];
 
   @override 
   void initState() {
     // TODO: implement initState
     super.initState();
     _loadCustomer();
+    _loadStockKeepingItems();
   }
 
   @override
@@ -74,17 +78,114 @@ class _DeliveryOrderPageState extends State<DeliveryOrderPage> {
     }
   }
 
-  void _addItem() {
+  Future<void> _loadStockKeepingItems() async
+  {
+    final data = await StockKeepingItem().fetchAllWarehouseItem();
+
     setState(() {
-      _items.add(
-        DeliveryOrderItems(
-          itemNumber: _items.length + 1,
-          description: 'TRANSPORT CHARGES',
-          uom: 'TRIP',
-          quantity: 1,
-        ),
-      );
+      warehouseItems = data;
     });
+  }
+
+  void _addItem() {    
+    StockKeepingModel? selectedItem;
+    final desCtrl = TextEditingController();
+    final uomCtrl = TextEditingController();
+    final qtyCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context)
+      {
+        return AlertDialog(
+          title: const Text("Add Item"),
+          content: StatefulBuilder(
+            builder:(context, setLocalState)
+            {
+              return SizedBox(
+                width: 400,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownSearch<StockKeepingModel>(       
+                      compareFn: (a,b) => a.itemCode == b.itemCode,               
+                      items : (filter,_) => warehouseItems,
+                      itemAsString: (s) => s.itemDescription,
+                      popupProps: const PopupProps.menu(
+                        showSearchBox: true,
+                      ),
+                      decoratorProps: const DropDownDecoratorProps(
+                        decoration: InputDecoration(
+                          labelText: "Select Item",
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+
+                      onChanged: (item)
+                      {
+                        setLocalState(()
+                        {
+                          selectedItem = item;
+                          desCtrl.text = item!.itemDescription;
+                          uomCtrl.text = item?.unitOfMeasurement ?? '';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    TextFormField(
+                      controller: uomCtrl,
+                      decoration: const InputDecoration(
+                        labelText: "UOM",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    TextFormField(
+                      controller: qtyCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: "Quantity",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),                
+              );
+            },
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+              child: const Text("Add"),
+              onPressed: ()
+              {
+                final qty = double.tryParse(qtyCtrl.text);
+                if(desCtrl.text.isEmpty || uomCtrl.text.isEmpty || qty == null)
+                {
+                  // show error
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please fill in all fields with valid data"))
+                  );
+                  return;
+                }
+                setState(() {
+                  _items.add(DeliveryOrderItems(
+                    itemNumber: _items.length + 1, 
+                    description: selectedItem!.itemDescription, 
+                    uom: uomCtrl.text, 
+                    quantity: qty));
+                });
+                Navigator.pop(context);
+              },              
+            ),
+          ],
+        );         
+      },
+    );
   }
 
   void _removeItem(int i) {
@@ -272,7 +373,7 @@ class _DeliveryOrderPageState extends State<DeliveryOrderPage> {
       color: Colors.grey.shade300,
       child: Row(children: const [
         _HCell("NO", 40),
-        _HCell("DESCRIPTION", null),
+        _HCell("DESCRIPTION", 1000),
         _HCell("UOM", 70),
         _HCell("QTY", 80),
         SizedBox(width: 40),
@@ -292,7 +393,7 @@ class _DeliveryOrderPageState extends State<DeliveryOrderPage> {
           ),
           child: Row(children: [
             _cell(Text(item.itemNumber.toString()), 40),
-            _cell(Text(item.description)),
+            _cell(Text(item.description),1000),
             _cell(Text(item.uom), 70),
             _cell(Text(item.quantity.toString()), 80),
             IconButton(
