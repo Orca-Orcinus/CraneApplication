@@ -93,6 +93,11 @@ class _DisplayJobPageState extends State<DisplayJobPage> {
     await Share.share('Check out this image: data:image/jpeg;base64,$_base64Image');
   }
 
+  Future<void> Testing() async
+  {
+
+  }
+
   Future<void> getOperatorJobData() async
   {
     List<Map<String,dynamic>> allJobs = await getJobData();   
