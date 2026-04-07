@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:craneapplication/features/auth/fbStorage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +13,7 @@ enum documentType
 {
   workOrder,
   onSiteArrival,
+  deliveryOrder,
 }
 
 class ImageService
@@ -24,13 +28,17 @@ class ImageService
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if(image != null)
     {
-      // Initialize the nested map and list if they don't exist
-      jobImages.putIfAbsent(imageId, () => {});
-      jobImages[imageId]!.putIfAbsent(documentType, () => []);
-      // Add the new image to the list
-      final filePath = File(image.path);
-      jobImages[imageId]![documentType]!.add(filePath);      
-      fbStorageTool.uploadJobImage(imageId, documentType, filePath);
+      if (kIsWeb) {
+        // 🌐 Web — use bytes directly, no File/Platform
+        print('Running on Web');
+        final Uint8List bytes = await image.readAsBytes();
+        await fbStorageTool.uploadJobImageBytes(imageId, documentType, bytes);
+      } else {
+        // 📱 Android — use File from dart:io
+        print('Running on Android');
+        final File file = File(image.path);
+        await fbStorageTool.uploadJobImage(imageId, documentType, file);
+      }
     }
   }
 
@@ -39,13 +47,17 @@ class ImageService
     final XFile? image = await _picker.pickImage(source: ImageSource.camera);
     if(image != null)
     {
-      // Initialize the nested map and list if they don't exist
-      jobImages.putIfAbsent(pictureId, () => {});
-      jobImages[pictureId]!.putIfAbsent(documentType, () => []);
-      // Add the new image to the list
-      final filePath = File(image.path);
-      jobImages[pictureId]![documentType]!.add(filePath);
-      fbStorageTool.uploadJobImage(pictureId, documentType, filePath);
+      if (kIsWeb) {
+        // 🌐 Web — use bytes directly, no File/Platform
+        print('Running on Web');
+        final Uint8List bytes = await image.readAsBytes();
+        await fbStorageTool.uploadJobImageBytes(pictureId, documentType, bytes);
+      } else {
+          // 📱 Android — use File from dart:io
+          print('Running on Android');
+          final File file = File(image.path);
+          await fbStorageTool.uploadJobImage(pictureId, documentType, file);
+      }
     }
   }
 
@@ -106,4 +118,9 @@ class ImageService
   {
     fbStorageTool.uploadWorkOrderNo(jobId, documentType, workOrderNo);
   }  
+
+  Future<void> inputDeliveryOrderNo(String jobId,documentType documentType,String deliveryOrderNo) async
+  {
+    fbStorageTool.uploadWorkOrderNo(jobId, documentType, deliveryOrderNo);
+  }
 }

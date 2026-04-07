@@ -7,7 +7,5 @@ class CraneSelectionModel {
   Future<List<Map<String,dynamic>>> getCraneData() async
   {
     return _db.getData(collection: 'vehicles');
-  }
-
-  //get company name from vehicle number
+  }  //get company name from vehicle number
 }

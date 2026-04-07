@@ -2,7 +2,6 @@ import 'package:craneapplication/Pages/CustomerInformationPage.dart';
 import 'package:craneapplication/Pages/DeliveryOrderPage.dart';
 import 'package:craneapplication/Pages/GroupItemPage.dart';
 import 'package:craneapplication/Pages/LoginPage.dart';
-import 'package:craneapplication/Pages/StockDataPage.dart';
 import 'package:craneapplication/Pages/StockReceivedItemPage.dart';
 import 'package:craneapplication/Pages/StockTransferItemPage.dart';
 import 'package:craneapplication/Pages/StockWarehousePage.dart';

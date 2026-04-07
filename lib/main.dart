@@ -12,8 +12,8 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Supabase.initialize(
-    url: 'https://ajdkvfddcqswopamqauz.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqZGt2ZmRkY3Fzd29wYW1xYXV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk0NTg4OTUsImV4cCI6MjA1NTAzNDg5NX0.ItziwgzFEqnJocEfGKKtw8lwjpzszG-N4hQMCB7BEnc',
+    url: 'https://xqbansqywmrybfpiffhd.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhxYmFuc3F5d21yeWJmcGlmZmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NjMzNDIsImV4cCI6MjA5MTAzOTM0Mn0.WmB_Rwdtf4huwFPSn5iiAn28rkEfu2c8SaeLpW8GK4E',
   );
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: [

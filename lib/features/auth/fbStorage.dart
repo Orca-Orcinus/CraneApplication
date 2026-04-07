@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:craneapplication/Model/ApplicationTool/imageService.dart';
 import 'package:craneapplication/features/auth/firebasestore.dart';
@@ -28,6 +29,35 @@ class FBStorage {
     }
   }
 
+
+  // 🌐 Web upload — uses Uint8List bytes
+  Future<void> uploadJobImageBytes(
+    String taskId,
+    documentType documentType,
+    Uint8List imageBytes,
+  ) async {
+    try {
+      String fileName = "${documentType.toString()}_${DateTime.now().millisecondsSinceEpoch}.jpg";
+
+      await Supabase.instance.client.storage
+          .from('delivery-image')
+          .uploadBinary(
+            fileName,
+            imageBytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: true,
+            ),
+          );
+
+      await _saveToDatabase(taskId, fileName);
+
+    } catch (e) {
+      print("Error uploading image (Web): $e");
+    }
+  }
+
+
   Future<void> uploadWorkOrderNo(String jobId,documentType documentType,String workOrderNumber) async
   {
       // // Retrieve the Firestore document ID
@@ -40,6 +70,25 @@ class FBStorage {
           documentId: documentId,
           data: {
             "workOrderNo": workOrderNumber,
+          },
+        );
+      } else {
+        print('Document ID not found for jobId: $jobId');
+      }
+  }
+
+  Future<void> uploadDeliveryOrderNo(String jobId,documentType documentType,String deliveryOrderNo) async
+  {
+      // // Retrieve the Firestore document ID
+      String? documentId = await getJobDocumentId(collection: "JobInfo", jobId: jobId);
+
+      if (documentId != null) {
+        // Update the Firestore document with the image URL
+        await fsService.updateData(
+          collection: "JobInfo",
+          documentId: documentId,
+          data: {
+            "deliveryOrderNo": deliveryOrderNo,
           },
         );
       } else {
@@ -65,15 +114,24 @@ class FBStorage {
 
       // Generate a unique file name
       String fileName = "${documentType.toString()}_${DateTime.now().millisecondsSinceEpoch}.jpg";
-
+      
       // Upload the image to Supabase Storage
       await Supabase.instance.client.storage
-          .from('craneapplication')
-          .upload(fileName, imageFile);
+          .from('delivery-image')
+          .upload(fileName, imageFile);     
 
+      _saveToDatabase(taskId, fileName);
+
+    } catch (e) {
+      print("Error uploading image: $e");
+    }
+  }
+
+  Future<void> _saveToDatabase(String taskId, String fileName) async {
+    try {
       // Get the public URL of the uploaded image
       publicUrl = Supabase.instance.client.storage
-          .from('craneapplication')
+          .from('delivery-image')
           .getPublicUrl(fileName);
 
       // // // Retrieve the Firestore document ID
@@ -88,12 +146,12 @@ class FBStorage {
             "workorder_images": fileName,
             "downloadUrl":publicUrl,
           },
-        );
+        ); 
       } else {
-        print('Document ID not found for jobId: $taskId');
+        print('Document ID not found for taskId: $taskId');
       }
     } catch (e) {
-      print("Error uploading image: $e");
+      print("Error saving to database: $e");
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:craneapplication/Model/UserProfile/userService.dart';
+import 'package:craneapplication/Pages/CraneSelectionPage.dart';
 import 'package:craneapplication/Pages/HomePage.dart';
 import 'package:craneapplication/Pages/InvoicePage.dart';
 import 'package:craneapplication/Pages/ManagerUserProfilePage.dart';
@@ -81,6 +82,19 @@ class MyDrawer extends StatelessWidget {
                                           ),
                                         ),    
                                         const SizedBox(height: 5),
+
+                                        Padding(
+                                          padding: const EdgeInsets.only(left: 25),
+                                          child: ListTile(
+                                            leading: const Icon(Icons.people),    
+                                            title:const Text("D A T A"),
+                                            onTap:() {
+                                              Navigator.pop(context);
+
+                                              Navigator.push(context, MaterialPageRoute(builder: (context) => const CraneSelectionPage()));
+                                            },
+                                          ),
+                                        ),
                                       ],                                
 
                                       Padding(

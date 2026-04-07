@@ -94,10 +94,63 @@ class _CraneSelectionPageState extends State<CraneSelectionPage> {
     }
   }
 
+  Future<void> addVehicles(String vehicleNumber) async
+  {
+    try
+    {
+      await _dbService.addData(
+        collection: 'vehicles',
+        data: {
+          "vehicleNumber": vehicleNumber,
+        });
+    }
+    catch(e)
+    {
+      print("Error fetching vehicle: $e");
+    }
+  }
+  
+
   void onAddJobPressed() async
   {
     await prepareData();
     AddCraneTask();
+  }
+
+  void AddNewVehicle() async
+  {
+    TextEditingController vehicleNumberController = TextEditingController();
+
+    showDialog(context: context, builder: (context)
+    {
+      return AlertDialog(
+        title: Text("Add New Vehicle"),
+        content: TextField(
+          controller: vehicleNumberController,
+          decoration: InputDecoration(
+            labelText: "Vehicle Number",
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async
+            {
+              if(vehicleNumberController.text.isNotEmpty)
+              {
+                await addVehicles(vehicleNumberController.text);
+                Navigator.of(context).pop();
+              }
+            },
+            child: Text("Add"),
+          ),
+        ],
+      );
+    });
   }
 
   void AddCraneTask() async
@@ -562,14 +615,39 @@ class _CraneSelectionPageState extends State<CraneSelectionPage> {
           ]
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async
-        {
-          await prepareData();
-          AddCraneTask();
-        },
-        label: Text("Add Job")
-        ),
+      floatingActionButton: 
+      Align(
+        alignment: Alignment.bottomRight,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width:100,
+              child:FloatingActionButton.extended(
+                onPressed: () async
+                {
+                  await prepareData();
+                  AddCraneTask();
+                },
+                label: Text("Add Job")
+                ),
+            ),
+
+            SizedBox(height: 5),
+
+            SizedBox(
+              width:100,
+              child:FloatingActionButton.extended(
+                onPressed: () async
+                {
+                  await prepareData();
+                  AddNewVehicle();
+                }, 
+                label: Text("Add Vehicle"))
+            ),
+          ]
+        ),        
+      ),  
     );
   }
 }

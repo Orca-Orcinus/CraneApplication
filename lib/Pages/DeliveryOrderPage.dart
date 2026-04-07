@@ -33,7 +33,7 @@ class _DeliveryOrderPageState extends State<DeliveryOrderPage> {
   List<CustomerProfile> customers = [];
   bool _isLoadingCustomers = true;
   String? _customerLoadError;
-  List<DeliveryOrderItems> _items = [];
+  final List<DeliveryOrderItems> _items = [];
   List<StockKeepingModel> warehouseItems = [];
 
   @override 
@@ -128,7 +128,7 @@ class _DeliveryOrderPageState extends State<DeliveryOrderPage> {
                         {
                           selectedItem = item;
                           desCtrl.text = item!.itemDescription;
-                          uomCtrl.text = item?.unitOfMeasurement ?? '';
+                          uomCtrl.text = item.unitOfMeasurement ?? '';
                         });
                       },
                     ),
