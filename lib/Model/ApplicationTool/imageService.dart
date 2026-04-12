@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 
+import 'package:craneapplication/components/GoogleDriveService.dart';
 import 'package:craneapplication/features/auth/fbStorage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +20,7 @@ class ImageService
 {
   final ImagePicker _picker = ImagePicker();  
   final FBStorage fbStorageTool = FBStorage();
+  final GoogleDriveService _driveService = GoogleDriveService();
   Map<String,Map<documentType,List<File>>> jobImages = {};
   String _base64Image = "";
 
@@ -32,12 +33,14 @@ class ImageService
         // 🌐 Web — use bytes directly, no File/Platform
         print('Running on Web');
         final Uint8List bytes = await image.readAsBytes();
-        await fbStorageTool.uploadJobImageBytes(imageId, documentType, bytes);
+        await fbStorageTool.uploadJobImageBytes(imageId, documentType, bytes); // Disable Supabase for the moment
+        // await _driveService.uploadImage(bytes, '$imageId.jpg');
       } else {
         // 📱 Android — use File from dart:io
         print('Running on Android');
         final File file = File(image.path);
-        await fbStorageTool.uploadJobImage(imageId, documentType, file);
+        await fbStorageTool.uploadJobImage(imageId, documentType, file);// Disable Supabase for the moment
+        // await _driveService.uploadImage(await file.readAsBytes(), '$imageId.jpg');
       }
     }
   }
@@ -51,12 +54,14 @@ class ImageService
         // 🌐 Web — use bytes directly, no File/Platform
         print('Running on Web');
         final Uint8List bytes = await image.readAsBytes();
-        await fbStorageTool.uploadJobImageBytes(pictureId, documentType, bytes);
+        await fbStorageTool.uploadJobImageBytes(pictureId, documentType, bytes); // Disable Supabase for the moment
+        //await _driveService.uploadImage(bytes, '$pictureId.jpg');
       } else {
           // 📱 Android — use File from dart:io
           print('Running on Android');
           final File file = File(image.path);
-          await fbStorageTool.uploadJobImage(pictureId, documentType, file);
+          await fbStorageTool.uploadJobImage(pictureId, documentType, file);// Disable Supabase for the moment
+          //await _driveService.uploadImage(await file.readAsBytes(), '$pictureId.jpg');      
       }
     }
   }

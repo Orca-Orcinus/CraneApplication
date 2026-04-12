@@ -1,8 +1,9 @@
 import 'package:craneapplication/Model/UserProfile/userService.dart';
-import 'package:craneapplication/Pages/CraneSelectionPage.dart';
 import 'package:craneapplication/Pages/HomePage.dart';
 import 'package:craneapplication/Pages/InvoicePage.dart';
 import 'package:craneapplication/Pages/ManagerUserProfilePage.dart';
+import 'package:craneapplication/Pages/TimeSheetPage/AdminTimeSheetPage.dart';
+import 'package:craneapplication/Pages/TimeSheetPage/OperatorTimeSheetPage.dart';
 import 'package:craneapplication/Pages/UserProfilePage.dart';
 import 'package:craneapplication/auth/AuthPage.dart';
 import 'package:craneapplication/enum/RolesEnum.dart';
@@ -12,13 +13,17 @@ import 'package:flutter/material.dart';
 class MyDrawer extends StatelessWidget {
   MyDrawer({super.key});
   
-  final UserService user = UserService();
+  final UserService user = UserService();                                              
 
-  Future<Rolesenum> checkCurrentUser() async
-  {
-    var roleIndex = await user.checkUserRole();
-    Rolesenum userRole = Rolesenum.values[roleIndex];
-    return userRole;
+  Future<Map<String, dynamic>> _getUserData() async {
+    final results = await Future.wait([
+      user.checkUserRole(),
+      user.getUserName(),
+    ]);
+    return {
+      'role': Rolesenum.values[results[0] as int],
+      'userName': results[1] as String,
+    };
   }
 
   void logout() async
@@ -30,8 +35,8 @@ class MyDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        child: FutureBuilder<Rolesenum>(
-          future: checkCurrentUser(),
+        child: FutureBuilder<Map<String,dynamic>>(
+          future: _getUserData(),
           builder: (context,snapshot)
           {
             if(snapshot.connectionState == ConnectionState.waiting)
@@ -43,6 +48,9 @@ class MyDrawer extends StatelessWidget {
             {
               return Center(child: Text('Error: ${snapshot.error}'));
             }
+            final Rolesenum userRole = snapshot.data!['role'];
+            final String userName = snapshot.data!['userName'];
+
             return Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -86,16 +94,34 @@ class MyDrawer extends StatelessWidget {
                                         Padding(
                                           padding: const EdgeInsets.only(left: 25),
                                           child: ListTile(
-                                            leading: const Icon(Icons.people),    
+                                            leading: const Icon(Icons.dashboard_customize_outlined),    
                                             title:const Text("D A T A"),
                                             onTap:() {
                                               Navigator.pop(context);
 
-                                              Navigator.push(context, MaterialPageRoute(builder: (context) => const CraneSelectionPage()));
+                                              Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminTimesheetPage()));
                                             },
                                           ),
                                         ),
                                       ],                                
+                                      
+                                      if(user.isOperator)
+                                      ...[
+                                         Padding(
+                                          padding: const EdgeInsets.only(left: 25),
+                                          child: ListTile(
+                                            leading: const Icon(Icons.dashboard_customize_outlined),    
+                                            title:const Text("D A T A"),
+                                            onTap:() async {
+                                              Navigator.pop(context);
+                                              
+
+                                              Navigator.push(context, MaterialPageRoute(builder: (context) 
+                                              => OperatorTimesheetPage(operatorName: userName)));
+                                            },
+                                          ),
+                                        ),    
+                                      ],
 
                                       Padding(
                                         padding: const EdgeInsets.only(left: 25),

@@ -4,7 +4,10 @@ import 'package:craneapplication/auth/auth_services.dart';
 import 'package:craneapplication/components/MyButton.dart';
 import 'package:craneapplication/helper/common.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+// ✅ Required for web button
 
 class LoginPage extends StatefulWidget
 {
@@ -26,6 +29,59 @@ class _LoginPageState extends State<LoginPage>
 {  
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _error;
+  
+  // ✅ Web — listen to sign in events from Google button
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      _listenToSignInEvents();
+    }
+  }
+
+  void _listenToSignInEvents() {
+    GoogleSignIn.instance.authenticationEvents.listen((event) async {
+      if (event is GoogleSignInAuthenticationEventSignIn) {
+        setState(() => _isLoading = true);
+
+        final userCredential = await AuthServices().handleWebSignIn(event.user);
+
+        setState(() => _isLoading = false);
+
+        if (userCredential != null && mounted) {
+          // ✅ Navigate to home after sign in
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          setState(() => _error = 'Sign in failed. Please try again.');
+        }
+      }
+    }, onError: (e) {
+      setState(() {
+        _isLoading = false;
+        _error = 'Sign in error: $e';
+      });
+    });
+  }
+
+   // ✅ Android — programmatic sign in
+  Future<void> _signInAndroid() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await AuthServices().signInWithGoogle();
+
+    setState(() => _isLoading = false);
+
+    if (result != null && mounted) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      setState(() => _error = 'Sign in failed. Please try again.');
+    }
+  }
 
   void signUserIn (BuildContext context) async
   {
@@ -165,53 +221,57 @@ class _LoginPageState extends State<LoginPage>
 
                 const SizedBox(height: 10),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          color: Colors.grey.shade400,
-                          thickness: 0.5,
-                        ),
-                      ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text("Or Continue With"),
-                      ),
-                        Expanded(
-                        child: Divider(
-                          color: Colors.grey.shade400,
-                          thickness: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // Padding(
+                //   padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                //   child: Row(
+                //     children: [
+                //       Expanded(
+                //         child: Divider(
+                //           color: Colors.grey.shade400,
+                //           thickness: 0.5,
+                //         ),
+                //       ),
+                //         const Padding(
+                //           padding: EdgeInsets.symmetric(horizontal: 10),
+                //           child: Text("Or Continue With"),
+                //       ),
+                //         Expanded(
+                //         child: Divider(
+                //           color: Colors.grey.shade400,
+                //           thickness: 0.5,
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
 
                 const SizedBox(height: 20),
 
                 //google icon and referencing
-                Padding(padding: const EdgeInsets.symmetric(horizontal: 25),
-                child:      
-                      TextButton.icon(onPressed: () {
-                      AuthServices().signInWithGoogle();
-                    },
-                        icon: Image.asset('assets/images/google.png', height:24.0, width: 24),
-                        label: Text("Login With Google",style: TextStyle(fontSize: 16,color: Colors.black
-                      ),
-                    ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.all(12),
-                    backgroundColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.grey)),
-                    ),
-                  ),
-                ),
+                // Padding(padding: const EdgeInsets.symmetric(horizontal: 25),
+                // child:      
+                //       TextButton.icon(onPressed: () {
+                //         if (kIsWeb) {
+                //           web.GoogleSignInPlugin().renderButton();
+                //         } else {
+                //           _signInAndroid();
+                //         }
+                //     },
+                //         icon: Image.asset('assets/images/google.png', height:24.0, width: 24),
+                //         label: Text("Login With Google",style: TextStyle(fontSize: 16,color: Colors.black
+                //       ),
+                //     ),
+                //   style: TextButton.styleFrom(
+                //     padding: EdgeInsets.all(12),
+                //     backgroundColor: Colors.transparent,
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(12),
+                //       side: BorderSide(color: Colors.grey)),
+                //     ),
+                //   ),
+                // ),
 
-                const SizedBox(height:20),
+                // const SizedBox(height:20),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

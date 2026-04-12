@@ -32,4 +32,17 @@ class UserService
       return 0;
     }
   }
+
+  Future<String> getUserName() async
+  {
+    Map<String,dynamic>? userData = await getUserCredentials();
+    if(userData != null)
+    {
+      return userData["name"];
+    }
+    else
+    {
+      return "Unknown User";
+    }
+  }
 }

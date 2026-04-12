@@ -42,3 +42,21 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase & Credentials (SENSITIVE - NEVER COMMIT)
+google-services.json
+service_account.json
+assets/service_account.json
+firebase-debug.log
+lib/firebase_options.dart
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.main
+
+# Firebase emulator
+.runtimeconfig.json
