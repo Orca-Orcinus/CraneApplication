@@ -203,7 +203,9 @@ class _DeliveryOrderPageState extends State<DeliveryOrderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Delivery Order")),
+      appBar: AppBar(
+        title: const Text("Create Delivery Order")
+      ),
       drawer: MyDrawer(),
       body: _isLoadingCustomers
           ? const Center(child: CircularProgressIndicator())

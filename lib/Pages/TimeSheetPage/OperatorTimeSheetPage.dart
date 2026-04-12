@@ -1,3 +1,4 @@
+import 'package:craneapplication/components/MyDrawer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../Model/TimeSheetService.dart';
@@ -152,10 +153,11 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
+        drawer: MyDrawer(),
+        // backgroundColor: Colors.grey.shade100,
         appBar: AppBar(
-          backgroundColor: Colors.blue.shade700,
-          foregroundColor: Colors.white,
+          // backgroundColor: Colors.blue.shade700,
+          // foregroundColor: Colors.white,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -164,9 +166,9 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage> {
             ],
           ),
           bottom: const TabBar(
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
+            // indicatorColor: Colors.white,
+            // labelColor: Colors.white,
+            // unselectedLabelColor: Colors.white60,
             tabs: [
               Tab(icon: Icon(Icons.add), text: 'Add Entry'),
               Tab(icon: Icon(Icons.list), text: 'My Entries'),
@@ -403,20 +405,42 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage> {
                                 DateFormat('dd MMM yyyy').format(entry.date),
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade50,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${entry.ton} Ton',
-                                  style: TextStyle(
-                                    color: Colors.blue.shade700,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${entry.ton} Ton',
+                                      style: TextStyle(
+                                        color: Colors.blue.shade700,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 8),
+                                  PopupMenuButton(
+                                    icon: Icon(Icons.more_vert, color: Colors.grey.shade600),
+                                    itemBuilder: (BuildContext context) {
+                                      return [
+                                        PopupMenuItem(
+                                          child: Row(
+                                            children: const [
+                                              Icon(Icons.delete, color: Colors.red, size: 18),
+                                              SizedBox(width: 8),
+                                              Text('Delete', style: TextStyle(color: Colors.red)),
+                                            ],
+                                          ),
+                                          onTap: () => _showDeleteConfirmation(entry),
+                                        ),
+                                      ];
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -434,6 +458,58 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage> {
                   );
                 },
               ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showDeleteConfirmation(TimesheetEntry entry) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Entry'),
+          content: Text(
+            'Are you sure you want to delete this entry?\n\n'
+            '${DateFormat('dd MMM yyyy').format(entry.date)}\n'
+            '${entry.carPlate} - ${entry.customer}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                try {
+                  await _service.deleteEntry(
+                    widget.operatorName,
+                    entry.date,
+                    entry.id,
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Entry deleted successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
             ),
           ],
         );

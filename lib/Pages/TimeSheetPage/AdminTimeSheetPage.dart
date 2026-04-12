@@ -1,3 +1,4 @@
+import 'package:craneapplication/components/MyDrawer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../Model/TimeSheetService.dart';
@@ -122,10 +123,11 @@ class _AdminTimesheetPageState extends State<AdminTimesheetPage> {
     final totalOvertime = _entries.fold(0.0, (s, e) => s + e.overtimeHours);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      // backgroundColor: Colors.grey.shade100,
+      drawer: MyDrawer(),
       appBar: AppBar(
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
+        // backgroundColor: Colors.blue.shade700,
+        // foregroundColor: Colors.white,
         title: const Text('Admin — Timesheets', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadOperators),

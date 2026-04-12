@@ -69,6 +69,18 @@ class TimesheetService {
             .toList());
   }
 
+  // ✅ Delete entry from Firestore
+  Future<void> deleteEntry(String operatorName, DateTime date, String docId) async {
+    try {
+      final path = _getCollectionPath(operatorName, date);
+      await _firestore.collection(path).doc(docId).delete();
+      print('Entry deleted from Firestore: $path/$docId');
+    } catch (e) {
+      print('Error deleting entry: $e');
+      rethrow;
+    }
+  }
+
   // ✅ Generate Excel file name e.g. LUCAS_FEB_2026
   String getExcelFileName(String operatorName, DateTime month) {
     final monthStr = DateFormat('MMM').format(month).toUpperCase();

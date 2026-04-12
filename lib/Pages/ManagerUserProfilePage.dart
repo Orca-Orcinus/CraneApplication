@@ -179,7 +179,9 @@ class _ManagerUserProfilePageState extends State<ManagerUserProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:AppBar(title: Text("Profile Information")),
+      appBar: AppBar(
+        title: Text("Profile Information")
+      ),
       drawer:MyDrawer(),
       body: isLoading? const Center(child: CircularProgressIndicator()) : 
       Padding(padding: EdgeInsets.all(25.0),
