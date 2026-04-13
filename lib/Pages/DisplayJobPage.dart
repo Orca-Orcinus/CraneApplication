@@ -247,7 +247,7 @@ class _DisplayJobPageState extends State<DisplayJobPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Test Display"),        
+        title: Text("Job Display"),        
       ),
       drawer: MyDrawer(),
       body: SafeArea(

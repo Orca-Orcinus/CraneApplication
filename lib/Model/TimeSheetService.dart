@@ -4,6 +4,7 @@ import 'package:craneapplication/Model/UserProfile/userService.dart';
 import 'package:craneapplication/features/auth/firebasestore.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:web/web.dart' as web;
 import 'TimeSheetModel.dart';
 import 'package:intl/intl.dart';
@@ -145,7 +146,8 @@ class TimesheetService {
         entry.location,
         entry.ton.toString(),
         entry.workingHoursDisplay,
-        entry.workingHours.toStringAsFixed(2),
+        entry.loginTime.toString(),
+        entry.logoutTime.toString(),
         entry.overtimeHours.toStringAsFixed(2),
       ];
 
@@ -162,12 +164,13 @@ class TimesheetService {
 
     // ── Summary row ───────────────────────────────────────
     final summaryRow = entries.length + 2;
+    final workingHours = entries.where((e) => e.isLoggedOut).fold(0.0, (s, e) => s + e.actualHours);
     sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: summaryRow)).value =
         TextCellValue('TOTAL');
     sheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: summaryRow)).value =
         TextCellValue(entries.fold(0.0, (sum, e) => sum + e.ton).toStringAsFixed(2));
     sheet.cell(CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: summaryRow)).value =
-        TextCellValue(entries.fold(0.0, (sum, e) => sum + e.workingHours).toStringAsFixed(2));
+        TextCellValue(entries.fold(0.0, (sum, e) => sum + workingHours).toStringAsFixed(2));
     sheet.cell(CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: summaryRow)).value =
         TextCellValue(entries.fold(0.0, (sum, e) => sum + e.overtimeHours).toStringAsFixed(2));
 
@@ -225,6 +228,254 @@ void _downloadFile(Uint8List bytes, String fileName) {
     } catch (e) {
       print('Error fetching operators: $e');
       return [];
+    }
+  }
+
+    // ✅ Add to TimesheetService
+
+  // Save login entry
+  Future<String?> saveLoginEntry(TimesheetEntry entry, Uint8List? imageBytes) async {
+    try {
+      String? imageUrl;
+
+      // Upload login image to Supabase
+      if (imageBytes != null) {
+        imageUrl = await _uploadTimesheetImage(
+          imageBytes,
+          '${entry.operatorName}_${entry.date.millisecondsSinceEpoch}_login.png',
+        );
+      }
+
+      final entryWithImage = TimesheetEntry(
+        id: '',
+        operatorName: entry.operatorName,
+        carPlate: entry.carPlate,
+        customer: entry.customer,
+        location: entry.location,
+        ton: entry.ton,
+        date: entry.date,
+        loginTime: entry.loginTime,
+        loginImageUrl: imageUrl,
+        overtimeHours: 0,
+        workdayType: entry.workdayType,
+      );
+
+      final path = _getCollectionPath(entry.operatorName, entry.date);
+      final doc = await _firestore.collection(path).add(entryWithImage.toFirestore());
+
+      print('Login entry saved: ${doc.id}');
+      return doc.id;
+    } catch (e) {
+      print('Error saving login: $e');
+      rethrow;
+    }
+  }
+
+  // Save logout — updates existing entry
+  Future<void> saveLogout({
+    required String entryId,
+    required String operatorName,
+    required DateTime date,
+    required DateTime logoutTime,
+    required DateTime loginTime,
+    required WorkdayType workdayType,
+    required String deliveryOrderNumber,
+    Uint8List? imageBytes,
+  }) async {
+    try {
+      String? imageUrl;
+
+      if (imageBytes != null) {
+        imageUrl = await _uploadDeliveryOrderImage(
+          imageBytes,
+          '${operatorName}_${date.millisecondsSinceEpoch}_logout.png',
+        );
+      }
+
+      final overtime = TimesheetEntry.calculateOvertime(loginTime, logoutTime, workdayType);
+
+      final path = _getCollectionPath(operatorName, date);
+      await _firestore.collection(path).doc(entryId).update({
+        'logoutTime': logoutTime.toIso8601String(),
+        'logoutImageUrl': imageUrl,
+        'deliveryOrderNumber': deliveryOrderNumber,
+        'overtimeHours': overtime,
+      });
+
+      print('Logout saved. Overtime: $overtime hrs');
+    } catch (e) {
+      print('Error saving logout: $e');
+      rethrow;
+    }
+  }
+
+  // Get today's active entry (not logged out yet)
+  Future<TimesheetEntry?> getTodayActiveEntry(String operatorName) async {
+    try {
+      final today = DateTime.now();
+      final path = _getCollectionPath(operatorName, today);
+      final todayStr = DateFormat('yyyy-MM-dd').format(today);
+
+      final snapshot = await _firestore
+          .collection(path)
+          .where('date', isGreaterThanOrEqualTo: '${todayStr}T00:00:00.000')
+          .where('date', isLessThanOrEqualTo: '${todayStr}T23:59:59.999')
+          .where('logoutTime', isNull: true)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+      return TimesheetEntry.fromFirestore(snapshot.docs.first.data(), snapshot.docs.first.id);
+    } catch (e) {
+      print('Error fetching active entry: $e');
+      return null;
+    }
+  }
+
+  // Upload timesheet image to Supabase
+  Future<String?> _uploadTimesheetImage(Uint8List bytes, String fileName) async {
+    try {
+      await Supabase.instance.client.storage
+          .from('timesheet-images')   // 🔁 your bucket
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(contentType: 'image/png', upsert: true),
+          );
+      return Supabase.instance.client.storage
+          .from('timesheet-images')
+          .getPublicUrl(fileName);
+    } catch (e) {
+      print('Image upload error: $e');
+      return null;
+    }
+  }
+
+    Future<String?> _uploadDeliveryOrderImage(Uint8List bytes, String fileName) async {
+    try {
+      await Supabase.instance.client.storage
+          .from('delivery-image')   // 🔁 your bucket
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(contentType: 'image/png', upsert: true),
+          );
+      return Supabase.instance.client.storage
+          .from('delivery-image')
+          .getPublicUrl(fileName);
+    } catch (e) {
+      print('Image upload error: $e');
+      return null;
+    }
+  }
+
+  // Delete entry from Firestore and associated images from Supabase
+  Future<void> deleteTimesheetEntry({
+    required String operatorName,
+    required DateTime date,
+    required String entryId,
+    String? loginImageUrl,
+    String? logoutImageUrl,
+  }) async {
+    try {
+      // Delete images from Supabase
+      if (loginImageUrl != null && loginImageUrl.isNotEmpty) {
+        final loginFileName = '${operatorName}_${date.millisecondsSinceEpoch}_login.png';
+        await _deleteTimesheetImageWithFallback(loginImageUrl, loginFileName);
+      }
+      if (logoutImageUrl != null && logoutImageUrl.isNotEmpty) {
+        final logoutFileName = '${operatorName}_${date.millisecondsSinceEpoch}_logout.png';
+        await _deleteDeliveryOrderImageWithFallback(logoutImageUrl, logoutFileName);
+      }
+
+      // Delete entry from Firestore
+      final path = _getCollectionPath(operatorName, date);
+      await _firestore.collection(path).doc(entryId).delete();
+      
+      print('✓ Entry deleted from Firestore: $path/$entryId');
+    } catch (e) {
+      print('✗ Error deleting entry: $e');
+      rethrow;
+    }
+  }
+
+  // Delete image with fallback method
+  Future<void> _deleteTimesheetImageWithFallback(String imageUrl, String expectedFileName) async {
+    try {
+      // First try: parse URL to extract filename
+      final uri = Uri.parse(imageUrl);
+      final pathSegments = uri.pathSegments;
+      int publicIndex = pathSegments.indexOf('public');
+      
+      String fileName;
+      if (publicIndex != -1 && publicIndex + 2 < pathSegments.length) {
+        fileName = pathSegments.skip(publicIndex + 2).join('/');
+      } else {
+        fileName = Uri.decodeComponent(pathSegments.last);
+      }
+      
+      print('Attempting to delete image: $fileName');
+      
+      try {
+        await Supabase.instance.client.storage
+            .from('timesheet-images')
+            .remove([fileName]);
+        print('✓ Image deleted (via URL parsing): $fileName');
+        return;
+      } catch (e) {
+        print('URL-based deletion failed, trying with expected filename...');
+      }
+      
+      // Fallback: try with the expected filename
+      print('Attempting to delete with expected filename: $expectedFileName');
+      await Supabase.instance.client.storage
+          .from('timesheet-images')
+          .remove([expectedFileName]);
+      print('✓ Image deleted (via fallback): $expectedFileName');
+      
+    } catch (e) {
+      print('✗ Error deleting image: $e');
+      // Don't rethrow - continue with entry deletion even if image deletion fails
+    }
+  }
+
+    // Delete image with fallback method
+  Future<void> _deleteDeliveryOrderImageWithFallback(String imageUrl, String expectedFileName) async {
+    try {
+      // First try: parse URL to extract filename
+      final uri = Uri.parse(imageUrl);
+      final pathSegments = uri.pathSegments;
+      int publicIndex = pathSegments.indexOf('public');
+      
+      String fileName;
+      if (publicIndex != -1 && publicIndex + 2 < pathSegments.length) {
+        fileName = pathSegments.skip(publicIndex + 2).join('/');
+      } else {
+        fileName = Uri.decodeComponent(pathSegments.last);
+      }
+      
+      print('Attempting to delete image: $fileName');
+      
+      try {
+        await Supabase.instance.client.storage
+            .from('delivert-images')
+            .remove([fileName]);
+        print('✓ Image deleted (via URL parsing): $fileName');
+        return;
+      } catch (e) {
+        print('URL-based deletion failed, trying with expected filename...');
+      }
+      
+      // Fallback: try with the expected filename
+      print('Attempting to delete with expected filename: $expectedFileName');
+      await Supabase.instance.client.storage
+          .from('delivery-images')
+          .remove([expectedFileName]);
+      print('✓ Image deleted (via fallback): $expectedFileName');
+      
+    } catch (e) {
+      print('✗ Error deleting image: $e');
+      // Don't rethrow - continue with entry deletion even if image deletion fails
     }
   }
 }

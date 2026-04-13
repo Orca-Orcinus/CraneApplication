@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:craneapplication/components/MyDrawer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -119,7 +120,7 @@ class _AdminTimesheetPageState extends State<AdminTimesheetPage> {
   @override
   Widget build(BuildContext context) {
     final totalTon = _entries.fold(0.0, (s, e) => s + e.ton);
-    final totalHours = _entries.fold(0.0, (s, e) => s + e.workingHours);
+    final totalHours = _entries.where((e) => e.isLoggedOut).fold(0.0, (s, e) => s + e.actualHours);
     final totalOvertime = _entries.fold(0.0, (s, e) => s + e.overtimeHours);
 
     return Scaffold(
@@ -245,32 +246,7 @@ class _AdminTimesheetPageState extends State<AdminTimesheetPage> {
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final entry = _entries[index];
-                          return Card(
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.blue.shade50,
-                                child: Text(
-                                  '${index + 1}',
-                                  style: TextStyle(
-                                    color: Colors.blue.shade700,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              title: Text(
-                                DateFormat('dd MMM yyyy').format(entry.date),
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text(
-                                '${entry.carPlate}  •  ${entry.customer}  •  ${entry.location}\n'
-                                '${entry.workingHoursDisplay}  •  ${entry.ton} Ton'
-                                '${entry.overtimeHours > 0 ? '  •  ${entry.overtimeHours}h OT' : ''}',
-                              ),
-                              isThreeLine: true,
-                            ),
-                          );
+                          return _buildEntryCard(entry, index);
                         },
                       ),
           ),
@@ -287,5 +263,225 @@ class _AdminTimesheetPageState extends State<AdminTimesheetPage> {
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
       ],
     );
+  }
+
+  // Build expandable entry card with image links
+  Widget _buildEntryCard(TimesheetEntry entry, int index) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade50,
+          child: Text(
+            '${index + 1}',
+            style: TextStyle(
+              color: Colors.blue.shade700,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          DateFormat('dd MMM yyyy').format(entry.date),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          '${entry.carPlate}  •  ${entry.customer}  •  ${entry.location}\n'
+          '${entry.workingHoursDisplay}  •  ${entry.ton} Ton'
+          '${entry.overtimeHours > 0 ? '  •  ${entry.overtimeHours}h OT' : ''}',
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Login Order Image ──────────────────────────────
+                if (entry.loginImageUrl != null && entry.loginImageUrl!.isNotEmpty) ...[
+                  const Text(
+                    '📸 Login Order Image',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildImageLinkSection(entry.loginImageUrl!),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        Text(
+                          'No login image available',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
+                // ── Delivery Order Image ──────────────────────────
+                if (entry.logoutImageUrl != null && entry.logoutImageUrl!.isNotEmpty) ...[
+                  const Text(
+                    '📦 Delivery Order Image',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildImageLinkSection(entry.logoutImageUrl!),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
+                        const SizedBox(width: 8),
+                        Text(
+                          'No delivery image available',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build image link section with copyable URL
+  Widget _buildImageLinkSection(String imageUrl) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image preview
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Image.network(
+              imageUrl,
+              height: 120,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.image_not_supported, color: Colors.grey),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // URL link with copy button
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _launchUrl(imageUrl),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.link, size: 14, color: Colors.blue.shade700),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            imageUrl,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontSize: 11,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Copy button
+              Tooltip(
+                message: 'Copy link',
+                child: GestureDetector(
+                  onTap: () => _copyToClipboard(imageUrl),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(Icons.content_copy, size: 16, color: Colors.green.shade700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Copy URL to clipboard
+  void _copyToClipboard(String url) {
+    Clipboard.setData(ClipboardData(text: url));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text('Link copied to clipboard!'),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // Launch URL in browser
+  Future<void> _launchUrl(String url) async {
+    try {
+      // For web, open in new tab
+      if (url.startsWith('http')) {
+        // This would normally use url_launcher, but for now just copy
+        _copyToClipboard(url);
+      }
+    } catch (e) {
+      print('Error launching URL: $e');
+    }
   }
 }
