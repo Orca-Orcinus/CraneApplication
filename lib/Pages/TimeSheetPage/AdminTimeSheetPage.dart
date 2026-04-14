@@ -305,25 +305,25 @@ class _AdminTimesheetPageState extends State<AdminTimesheetPage> {
                   const SizedBox(height: 8),
                   _buildImageLinkSection(entry.loginImageUrl!),
                   const SizedBox(height: 16),
-                ] else ...[
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
-                        const SizedBox(width: 8),
-                        Text(
-                          'No login image available',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                // ] else ...[
+                //   Container(
+                //     padding: const EdgeInsets.all(8),
+                //     decoration: BoxDecoration(
+                //       color: Colors.grey.shade100,
+                //       borderRadius: BorderRadius.circular(8),
+                //     ),
+                //     child: Row(
+                //       children: [
+                //         Icon(Icons.info_outline, size: 16, color: Colors.grey.shade600),
+                //         const SizedBox(width: 8),
+                //         Text(
+                //           'No login image available',
+                //           style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                //   const SizedBox(height: 16),
                 ],
 
                 // ── Delivery Order Image ──────────────────────────

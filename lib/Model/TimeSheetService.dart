@@ -237,12 +237,15 @@ void _downloadFile(Uint8List bytes, String fileName) {
   Future<String?> saveLoginEntry(TimesheetEntry entry, Uint8List? imageBytes) async {
     try {
       String? imageUrl;
+      final date = entry.date;
+      final formattedDate =
+      '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
 
       // Upload login image to Supabase
       if (imageBytes != null) {
         imageUrl = await _uploadTimesheetImage(
           imageBytes,
-          '${entry.operatorName}_${entry.date.millisecondsSinceEpoch}_login.png',
+          '${formattedDate}_${entry.operatorName}_${entry.carPlate}.png',
         );
       }
 
@@ -284,11 +287,13 @@ void _downloadFile(Uint8List bytes, String fileName) {
   }) async {
     try {
       String? imageUrl;
+      final formattedDate =
+      '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
 
       if (imageBytes != null) {
         imageUrl = await _uploadDeliveryOrderImage(
           imageBytes,
-          '${operatorName}_${date.millisecondsSinceEpoch}_logout.png',
+          '${formattedDate}_${deliveryOrderNumber}_$operatorName.png',
         );
       }
 

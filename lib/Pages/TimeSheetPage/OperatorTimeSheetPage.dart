@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:craneapplication/Model/TimeSheetModel.dart';
 import 'package:craneapplication/Model/TimeSheetService.dart';
+import 'package:craneapplication/components/MyDrawer.dart';
 import 'package:craneapplication/features/auth/watermark_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -271,6 +272,7 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                                     location: locationCtrl.text.trim(),
                                     dateTime: DateTime.now(),
                                     carPlate: carPlateCtrl.text.trim().toUpperCase(),
+                                    operatorName: widget.operatorName,
                                   );
                                   setDialogState(() {
                                     loginImageBytes = bytes;
@@ -297,6 +299,7 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                                     location: locationCtrl.text.trim(),
                                     dateTime: DateTime.now(),                                    
                                     carPlate: carPlateCtrl.text.trim().toUpperCase(),
+                                    operatorName: widget.operatorName,
                                   );
                                   setDialogState(() {
                                     loginImageBytes = bytes;
@@ -528,7 +531,8 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                                   source: ImageSource.camera,
                                   location: _activeEntry!.location,
                                   dateTime: DateTime.now(),          
-                                  carPlate: _activeEntry!.carPlate,               
+                                  carPlate: _activeEntry!.carPlate,       
+                                  operatorName: _activeEntry!.operatorName,        
                                 );
                                 setDialogState(() {
                                   logoutImageBytes = bytes;
@@ -549,6 +553,7 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                                   location: _activeEntry!.location,
                                   dateTime: DateTime.now(),
                                   carPlate: _activeEntry!.carPlate,
+                                  operatorName: _activeEntry!.operatorName,
                                 );
                                 setDialogState(() {
                                   logoutImageBytes = bytes;
@@ -785,37 +790,36 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
-        appBar: AppBar(
-          backgroundColor: Colors.blue.shade700,
-          foregroundColor: Colors.white,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('My Timesheet', style: TextStyle(fontWeight: FontWeight.bold)),
-              Text(widget.operatorName, style: const TextStyle(fontSize: 12, color: Colors.white70)),
-            ],
-          ),
-          bottom: const TabBar(
-            indicatorColor: Colors.white,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white60,
-            tabs: [
-              Tab(icon: Icon(Icons.today), text: 'Today'),
-              Tab(icon: Icon(Icons.list), text: 'History'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          controller: _tabController,
+    return Scaffold(
+      drawer: MyDrawer(),
+      backgroundColor: Colors.grey.shade100,
+      appBar: AppBar(
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTodayTab(),
-            _buildHistoryTab(),
+            const Text('My Timesheet', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(widget.operatorName, style: const TextStyle(fontSize: 12, color: Colors.white70)),
           ],
         ),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          tabs: const [
+            Tab(icon: Icon(Icons.today), text: 'Today'),
+            Tab(icon: Icon(Icons.list), text: 'History'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildTodayTab(),
+          _buildHistoryTab(),
+        ],
       ),
     );
   }
@@ -1053,11 +1057,11 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
           );
         }
 
-        final totalTon = entries.fold(0.0, (s, e) => s + e.ton);
         final totalHours = entries.where((e) => e.isLoggedOut).fold(0.0, (s, e) => s + e.actualHours);
         final totalOvertime = entries.fold(0.0, (s, e) => s + e.overtimeHours);
 
         return Column(
+          mainAxisSize: MainAxisSize.max,
           children: [
             // Summary
             Container(
@@ -1067,7 +1071,6 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _summaryChip('Entries', '${entries.length}'),
-                  _summaryChip('Total Ton', totalTon.toStringAsFixed(1)),
                   _summaryChip('Total Hrs', totalHours.toStringAsFixed(1)),
                   _summaryChip('Overtime', totalOvertime.toStringAsFixed(1)),
                 ],
@@ -1132,6 +1135,17 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                                   _infoRow(Icons.receipt_long, 'DO Number', entry.deliveryOrderNumber!),
                               ],
 
+                              // ElevatedButton.icon(
+                              //   style: ElevatedButton.styleFrom(
+                              //     backgroundColor: Colors.orange.shade700, 
+                              //     foregroundColor: Colors.white,
+                              //     padding: const EdgeInsets.symmetric(vertical: 14),
+                              //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              //   ),
+                              //   onPressed: _showDeleteConfirmDialog,
+                              //   label: const Text('Delete',style: TextStyle(fontSize: 16)),
+                              // ),
+
                               // Images
                               const SizedBox(height: 8),
                               Row(
@@ -1146,7 +1160,6 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                                             borderRadius: BorderRadius.circular(8),
                                             child: Image.network(
                                               entry.loginImageUrl!,
-                                              height: 100,
                                               fit: BoxFit.cover,
                                             ),
                                           ),
@@ -1165,7 +1178,6 @@ class _OperatorTimesheetPageState extends State<OperatorTimesheetPage>
                                             borderRadius: BorderRadius.circular(8),
                                             child: Image.network(
                                               entry.logoutImageUrl!,
-                                              height: 100,
                                               fit: BoxFit.cover,
                                             ),
                                           ),

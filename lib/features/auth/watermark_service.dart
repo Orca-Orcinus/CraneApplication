@@ -11,6 +11,7 @@ class WatermarkService {
     required String location,
     required DateTime dateTime,
     String carPlate = '',
+    String operatorName = '',
   }) async {
     final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
@@ -25,6 +26,7 @@ class WatermarkService {
       location: location,
       dateTime: dateTime,
       carPlate: carPlate,
+      operatorNameText: operatorName,
     );
   }
 
@@ -33,7 +35,7 @@ class WatermarkService {
     required Uint8List imageBytes,
     required String location,
     required DateTime dateTime,
-    String operatorName = '',
+    String operatorNameText = '',
     String carPlate = '',
   }) async {
     try {
@@ -55,13 +57,13 @@ class WatermarkService {
       // ── Watermark background ────────────────────────────────
       final bgPaint = Paint()
         ..color = Colors.black.withOpacity(0.55);
-      final bgRect = Rect.fromLTWH(0, height - 120, width, 120);
+      final bgRect = Rect.fromLTWH(0, height - 160, width, 160);
       canvas.drawRect(bgRect, bgPaint);
 
       // ── Watermark text ──────────────────────────────────────
       final dateText = DateFormat('dd MMM yyyy  HH:mm:ss').format(dateTime);
       final locationText = '📍 $location';
-      final operatorName = '👷‍♂️ Operator: {operatorName}';
+      final operatorName = '👷‍♂️ Operator: ${operatorNameText}';
       final carPlateText = '🚗 Car Plate: ${carPlate}';
 
       // Date/time text
@@ -69,7 +71,7 @@ class WatermarkService {
         canvas: canvas,
         text: dateText,
         x: 16,
-        y: height - 105,
+        y: height - 145,
         fontSize: width * 0.030,
         color: Colors.white,
         bold: true,
@@ -80,7 +82,7 @@ class WatermarkService {
         canvas: canvas,
         text: locationText,
         x: 16,
-        y: height - 65,
+        y: height - 105,
         fontSize: width * 0.027,
         color: Colors.yellowAccent,
         bold: false,
@@ -91,7 +93,7 @@ class WatermarkService {
         canvas: canvas,
         text: operatorName,
         x: 16,
-        y: height - 28,
+        y: height - 65,
         fontSize: width * 0.022,
         color: Colors.white60,
         bold: false,

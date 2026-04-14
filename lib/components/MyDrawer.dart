@@ -113,8 +113,7 @@ class MyDrawer extends StatelessWidget {
                                             leading: const Icon(Icons.dashboard_customize_outlined),    
                                             title:const Text("D A T A"),
                                             onTap:() async {
-                                              Navigator.pop(context);
-                                              
+                                              Navigator.pop(context);                                              
 
                                               Navigator.push(context, MaterialPageRoute(builder: (context) 
                                               => OperatorTimesheetPage(operatorName: userName)));

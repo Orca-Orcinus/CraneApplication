@@ -3,6 +3,7 @@ import 'package:craneapplication/Model/UserProfile/userService.dart';
 import 'package:craneapplication/Pages/CraneDeliveryOrderPage.dart';
 import 'package:craneapplication/Pages/DisplayJobPage.dart';
 import 'package:craneapplication/Pages/LoginPage.dart';
+import 'package:craneapplication/Pages/TimeSheetPage/OperatorTimeSheetPage.dart';
 import 'package:craneapplication/enum/RolesEnum.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -28,15 +29,20 @@ class _HomePageState extends State<HomePage>
   void userHandling() async
   {
     await _userService.getUserCredentials();
-    getRole();
+    _getUserData();
   }
 
-  Future<Rolesenum> getRole() async
-  {
-    var roleIndex = await _userService.checkUserRole();
-    Rolesenum userRole = Rolesenum.values[roleIndex];
-    return userRole;
-  }  
+
+  Future<Map<String, dynamic>> _getUserData() async {
+    final results = await Future.wait([
+      _userService.checkUserRole(),
+      _userService.getUserName(),
+    ]);
+    return {
+      'role': Rolesenum.values[results[0] as int],
+      'userName': results[1] as String,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +53,9 @@ class _HomePageState extends State<HomePage>
       {
         if(snapshot.hasData)
         {          
-          return FutureBuilder<Rolesenum>(
-            future: getRole(),
-            builder: (context,roleSnapshot)
-            {
+          return FutureBuilder<Map<String, dynamic>>(
+            future: _getUserData(),
+            builder: (context, roleSnapshot) {
               if(roleSnapshot.connectionState == ConnectionState.waiting)
               {
                 return const Center(child: CircularProgressIndicator());
@@ -59,18 +64,20 @@ class _HomePageState extends State<HomePage>
               {
                 return Center(child: Text("Error: ${roleSnapshot.error}"));
               }
-              if(roleSnapshot.data == Rolesenum.Administrator) {
+              String userName = roleSnapshot.data!['userName'];
+              Rolesenum userRole = roleSnapshot.data!['role'] as Rolesenum;
+              if(userRole == Rolesenum.Administrator) {
                 // return ExcelViewerPage(username: _userService.getUserName());
                 return const CraneDeliveryOrderPage();
-              } else if(roleSnapshot.data == Rolesenum.Manager)              
+              } else if(userRole == Rolesenum.Manager)              
                 return const CraneDeliveryOrderPage();
                 //return const DisplayJobPage();
-              else if(roleSnapshot.data == Rolesenum.Account)
+              else if(userRole == Rolesenum.Account)
                 return const DisplayJobPage();
-              else if(roleSnapshot.data == Rolesenum.Foremen)
+              else if(userRole == Rolesenum.Foremen)
                 return const DisplayJobPage();
-              else if(roleSnapshot.data == Rolesenum.Operator)
-                return const DisplayJobPage();
+              else if(userRole == Rolesenum.Operator)
+                return OperatorTimesheetPage(operatorName: userName);
               else
                 return const SizedBox.shrink();
             });
